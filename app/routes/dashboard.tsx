@@ -1,13 +1,13 @@
 import { json, LoaderFunction } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server"; // Import session utility
 import { PrismaClient } from "@prisma/client";
-import { useLoaderData } from "react-router";
-import { useNavigate } from "@remix-run/react";
-import { FaBars, FaSignOutAlt } from "react-icons/fa";
-import {useState} from "react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { FaBars, FaSignOutAlt, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { useState } from "react";
 
 const prisma = new PrismaClient();
-// loader to fetch user profile data
+
+// Loader to fetch user profile data
 export let loader: LoaderFunction = async ({ request }) => {
     const userId = await requireUserSession(request);
 
@@ -16,14 +16,21 @@ export let loader: LoaderFunction = async ({ request }) => {
         where: { id: userId },
     });
 
-    return json({ user });
+    // Fetch journal entries for the user
+    const entries = await prisma.Journal.findMany({
+        where: { userId },
+    });
+
+    return json({ user, entries });
 };
 
-// Inside the component:
 export default function Dashboard() {
-    const { user } = useLoaderData(); // Fetch the user data from the loader
+    const { user, entries } = useLoaderData(); // Fetch user and entries data from the loader
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [newEntry, setNewEntry] = useState({ title: "", content: "", category: "", date: "" });
+    const [editEntry, setEditEntry] = useState(null);
+    const [currentEntries, setCurrentEntries] = useState(entries);
 
     const handleLogout = async () => {
         const response = await fetch("/api/auth/logout", {
@@ -37,39 +44,146 @@ export default function Dashboard() {
         }
     };
 
+    const handleAddEntry = async () => {
+        const response = await fetch("/api/entries/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newEntry),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            setCurrentEntries([...currentEntries, data]);
+            setNewEntry({ title: "", content: "", category: "", date: "" }); // Reset form
+        }
+    };
+
+    const handleEditEntry = async (id, updatedEntry) => {
+        const response = await fetch(`/api/entries/${id}/edit`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedEntry),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            setCurrentEntries(currentEntries.map((entry) => (entry.id === id ? data : entry)));
+            setEditEntry(null); // Reset edit mode
+        }
+    };
+
+    const handleDeleteEntry = async (id) => {
+        const response = await fetch(`/api/entries/${id}`, {
+            method: "DELETE",
+        });
+
+        if (response.ok) {
+            setCurrentEntries(currentEntries.filter((entry) => entry.id !== id));
+        }
+    };
+
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="d-flex min-vh-100 bg-light">
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-auto`}>
-                <div className="p-6">
-                    <h2 className="text-xl font-bold text-gray-800">Dashboard</h2>
-                    <nav className="mt-6">
-                        <a href="#" className="block py-2 text-gray-700 hover:bg-gray-200 rounded">Home</a>
-                        <a href="#" className="block py-2 text-gray-700 hover:bg-gray-200 rounded">Profile</a>
-                        <a href="#" className="block py-2 text-gray-700 hover:bg-gray-200 rounded">Settings</a>
-                    </nav>
-                </div>
-            </div>
+
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-grow-1 d-flex flex-column">
                 {/* Header */}
-                <header className="bg-white shadow p-4 flex justify-between items-center">
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden">
-                        <FaBars className="text-gray-800" />
+                <header className="bg-white shadow p-3 d-flex justify-content-between align-items-center">
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="btn btn-light d-lg-none">
+                        <FaBars />
                     </button>
-                    <h1 className="text-xl font-bold text-gray-800">Welcome, {user?.name}!</h1>
-                    <button onClick={handleLogout} className="flex items-center text-red-500 hover:text-red-600">
-                        <FaSignOutAlt className="mr-2" />
+                    <h1 className="h4 fw-bold mb-0">Welcome, {user?.name}!</h1>
+                    <button onClick={handleLogout} className="btn btn-danger d-flex align-items-center">
+                        <FaSignOutAlt className="me-2" />
                         Logout
                     </button>
                 </header>
 
                 {/* Content */}
-                <main className="flex-1 p-6">
-                    <div className="bg-white p-6 rounded-lg shadow">
-                        <p className="text-gray-700">Email: {user?.email}</p>
-                        {/* Add other user-specific content */}
+                <main className="flex-grow-1 p-4">
+                    {/* Journal Entry Management */}
+                    <div className="mb-4">
+                        <h2 className="h5 fw-bold mb-3">Journal Entries</h2>
+                        <div className="mb-3">
+                            <input
+                                type="text"
+                                placeholder="Title"
+                                value={newEntry.title}
+                                onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                                className="form-control mb-2"
+                            />
+                            <textarea
+                                placeholder="Content"
+                                value={newEntry.content}
+                                onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+                                className="form-control mb-2"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Category"
+                                value={newEntry.category}
+                                onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })}
+                                className="form-control mb-2"
+                            />
+                            <input
+                                type="date"
+                                value={newEntry.date}
+                                onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
+                                className="form-control mb-2"
+                            />
+                            <button onClick={handleAddEntry} className="btn btn-primary">
+                                <FaPlus className="me-2" />
+                                Add Entry
+                            </button>
+                        </div>
+                        <div className="list-group">
+                            {currentEntries.map((entry) => (
+                                <div key={entry.id} className="list-group-item">
+                                    <h3 className="h6 fw-bold">{entry.title}</h3>
+                                    <p>{entry.content}</p>
+                                    <small className="text-muted">{entry.category} | {entry.date}</small>
+                                    <div className="mt-2">
+                                        <button
+                                            onClick={() => setEditEntry(entry)}
+                                            className="btn btn-sm btn-warning me-2"
+                                        >
+                                            <FaEdit />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteEntry(entry.id)}
+                                            className="btn btn-sm btn-danger"
+                                        >
+                                            <FaTrash />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Summary View */}
+                    <div className="mb-4">
+                        <h2 className="h5 fw-bold mb-3">Summary</h2>
+                        <div className="row">
+                            <div className="col-md-6">
+                                <div className="card">
+                                    <div className="card-body">
+                                        <h3 className="h6 fw-bold">Entry Frequency</h3>
+                                        {/* Add a calendar heatmap here */}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-md-6">
+                                <div className="card">
+                                    <div className="card-body">
+                                        <h3 className="h6 fw-bold">Category Distribution</h3>
+                                        {/* Add a pie chart or bar graph here */}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </main>
             </div>

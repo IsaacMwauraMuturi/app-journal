@@ -35,7 +35,7 @@ model Journal {
   date       DateTime        @default(now())
   title      String
   content    String
-  image      String
+  image      String?
   userId     Int
   categoryId Int
   user       User            @relation(fields: [userId], references: [id])
