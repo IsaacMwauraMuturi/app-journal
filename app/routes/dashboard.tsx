@@ -1,286 +1,400 @@
 import { json, LoaderFunction } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
 import { PrismaClient } from "@prisma/client";
-import { useLoaderData, useNavigate } from "@remix-run/react";
-import { FaBars, FaSignOutAlt, FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
-import { useState } from "react";
-import JournalEditForm from "~/components/JournalEditForm";
-import { Calendar, momentLocalizer } from "react-big-calendar";
+import { useLoaderData, useFetcher } from "@remix-run/react";
+import { Pie, Bar, Line } from "react-chartjs-2";
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import CalendarHeatmap from 'react-calendar-heatmap';
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Pie, Bar } from "react-chartjs-2";
-import { Chart, registerables } from "chart.js";
-import Navbar from "~/components/Navbar";
-// import { WordCloud } from "react-wordcloud";
-// import "react-wordcloud/lib/styles.css";
+import "react-calendar-heatmap/dist/styles.css";
+import "chart.js/auto";
+import { FaPlus } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
 
 const prisma = new PrismaClient();
-Chart.register(...registerables);
 const localizer = momentLocalizer(moment);
 
-// Loader to fetch user profile data
 export let loader: LoaderFunction = async ({ request }) => {
     const userId = await requireUserSession(request);
+    const url = new URL(request.url);
 
-    // Fetch user data from your database (Prisma or other ORM)
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    });
+    // Get date range from query parameters
+    const startDate = url.searchParams.get("startDate");
+    const endDate = url.searchParams.get("endDate");
 
-    // Fetch journal entries for the user
     const entries = await prisma.journal.findMany({
-        where: { userId },
+        where: {
+            userId,
+            date: {
+                gte: startDate ? new Date(startDate) : undefined,
+                lte: endDate ? new Date(endDate) : undefined,
+            }
+        },
+        include: { category: true },
+        orderBy: { date: "desc" },
+        take: 100,
     });
-
-    return json({ user, entries });
+    return json({ entries });
 };
 
 export default function Dashboard() {
-    const { user, entries } = useLoaderData(); // Fetch user and entries data from the loader
-    const navigate = useNavigate();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editEntry, setEditEntry] = useState(null);
-    const [dateRange, setDateRange] = useState({ start: null, end: null });
-
-    // Filter entries based on the selected date range
-    const filteredEntries = entries.filter((entry) => {
-        const entryDate = new Date(entry.date);
-        return (
-            (!dateRange.start || entryDate >= dateRange.start) &&
-            (!dateRange.end || entryDate <= dateRange.end)
-        );
+    const { entries } = useLoaderData();
+    const fetcher = useFetcher();
+    const canvasRef = useRef(null);
+    const [wordCloudReady, setWordCloudReady] = useState(false);
+    const [dateRange, setDateRange] = useState({
+        startDate: moment().subtract(1, 'month').format('YYYY-MM-DD'),
+        endDate: moment().format('YYYY-MM-DD')
     });
 
-    const handleLogout = async () => {
-        const response = await fetch("/api/auth/logout", {
-            method: "POST",
+    // Handle date range changes
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setDateRange(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    // Apply date filter
+    const applyDateFilter = () => {
+        fetcher.load(`/dashboard?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
+    };
+
+    // Reset date filter
+    const resetDateFilter = () => {
+        setDateRange({
+            startDate: moment().subtract(1, 'month').format('YYYY-MM-DD'),
+            endDate: moment().format('YYYY-MM-DD')
+        });
+        fetcher.load('/dashboard');
+    };
+
+    // Use fetcher data if available, otherwise use loader data
+    const displayEntries = fetcher.data?.entries || entries;
+
+    // Chart configuration
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top' as const,
+            },
+        },
+    };
+
+    // ** Category Distribution **
+    const categoryChartData = {
+        labels: [...new Set(displayEntries.map(entry => entry.category.title))],
+        datasets: [{
+            data: [...new Set(displayEntries.map(entry => entry.category.title))]
+                .map(category => displayEntries.filter(e => e.category.title === category).length),
+            backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                '#9966FF', '#FF9F40', '#8AC249', '#EA3546'
+            ],
+        }],
+    };
+
+    // ** Mood Tracking Analysis **
+    const moodChartData = {
+        labels: [...new Set(displayEntries.filter(e => e.mood).map(e => e.mood))],
+        datasets: [{
+            data: [...new Set(displayEntries.filter(e => e.mood).map(e => e.mood))]
+                .map(mood => displayEntries.filter(e => e.mood === mood).length),
+            backgroundColor: [
+                '#4CAF50', // Happy
+                '#FFC107', // Sad
+                '#2196F3', // Neutral
+                '#9C27B0', // Excited
+                '#F44336'  // Angry
+            ],
+        }],
+    };
+
+    // ** Word Count Trends **
+    const wordCountChartData = {
+        labels: displayEntries.map(e => moment(e.date).format('MMM D')),
+        datasets: [{
+            label: "Word Count",
+            data: displayEntries.map(e => e.content.split(" ").length),
+            borderColor: "#36A2EB",
+            tension: 0.1,
+            fill: false
+        }],
+    };
+
+    // ** Entry Length Averages by Category **
+    const categoryAverages = [...new Set(displayEntries.map(e => e.category.title))]
+        .map(category => {
+            const categoryEntries = displayEntries.filter(e => e.category.title === category);
+            const avgWords = categoryEntries.reduce((sum, e) => sum + e.content.split(" ").length, 0) / categoryEntries.length;
+            return { category, avgWords };
         });
 
-        if (response.ok) {
-            navigate("/login"); // Redirect to login after logout
-        } else {
-            console.error("Logout failed");
+    const categoryAverageChartData = {
+        labels: categoryAverages.map(d => d.category),
+        datasets: [{
+            label: "Avg Words",
+            data: categoryAverages.map(d => d.avgWords),
+            backgroundColor: "#FFCE56"
+        }],
+    };
+
+    // ** Writing Frequency Heatmap **
+    const heatmapData = displayEntries.map(entry => ({
+        date: moment(entry.date).format('YYYY-MM-DD'),
+        count: 1,
+    }));
+
+    // ** Word Cloud Data **
+    useEffect(() => {
+        if (canvasRef.current && !wordCloudReady && displayEntries.length > 0) {
+            const wordCloudWords = displayEntries
+                .flatMap(e => e.content.toLowerCase().split(/\s+/))
+                .filter(word => word.length > 3)
+                .reduce((acc, word) => {
+                    acc[word] = (acc[word] || 0) + 1;
+                    return acc;
+                }, {});
+
+            import("wordcloud").then(WordCloud => {
+                WordCloud.default(canvasRef.current, {
+                    list: Object.entries(wordCloudWords),
+                    gridSize: 16,
+                    weightFactor: 30,
+                    fontFamily: "Arial",
+                    color: () => `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    backgroundColor: "#f8f9fa",
+                });
+                setWordCloudReady(true);
+            });
         }
-    };
-
-    // Handle date range change
-    const handleDateRangeChange = (start, end) => {
-        setDateRange({ start, end });
-    };
-
-    // Handle CRUD operations
-    const handleAddEntry = async (newEntry) => {
-        // Add new entry logic
-    };
-
-    const handleEditEntry = async (id, updatedEntry) => {
-        // Edit entry logic
-    };
-
-    const handleDeleteEntry = async (id) => {
-        // Delete entry logic
-    };
-
-    // Data for visualizations
-    const categoryDistributionData = {
-        labels: ["Personal", "Work", "Travel"],
-        datasets: [
-            {
-                data: [30, 50, 20],
-                backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56"],
-            },
-        ],
-    };
-
-    const wordCountTrendsData = {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May"],
-        datasets: [
-            {
-                label: "Word Count",
-                data: [100, 200, 150, 300, 250],
-                backgroundColor: "#36A2EB",
-            },
-        ],
-    };
-
-    const wordCloudData = [
-        { text: "Happy", value: 100 },
-        { text: "Sad", value: 80 },
-        { text: "Excited", value: 60 },
-        { text: "Angry", value: 40 },
-    ];
+    }, [displayEntries]);
 
     return (
-        <div className="font-sans bg-gray-50 text-gray-900">
+        <div className="container py-4">
+            <h2 className="mb-4">Journal Analytics</h2>
 
-            <div className="d-flex min-vh-100 bg-light">
-                {/* Sidebar */}
-                // Todo : Remove the header use main nav
-                {/* Main Content */}
-                <div className="flex-grow-1 d-flex flex-column">
-                    {/* Header */}
-                    <header className="bg-white shadow p-3 d-flex justify-content-between align-items-center">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="btn btn-light d-lg-none">
-                            <FaBars />
-                        </button>
-                        <h1 className="h4 fw-bold mb-0">Welcome, {user?.name}!</h1>
-                        <button onClick={handleLogout} className="btn btn-danger d-flex align-items-center">
-                            <FaSignOutAlt className="me-2" />
-                            Logout
-                        </button>
-                    </header>
-
-                    {/* Content */}
-                    <main className="flex-grow-1 p-4">
-                        {/* Date Range Selector */}
-                        <div className="mb-4">
-                            <h2 className="h5 fw-bold mb-3">Filter by Date Range</h2>
+            {/* Date Range Filter */}
+            <div className="card mb-4">
+                <div className="card-body">
+                    <h5 className="card-title">Date Range Filter</h5>
+                    <div className="row g-3">
+                        <div className="col-md-3">
+                            <label className="form-label">Start Date</label>
                             <input
                                 type="date"
-                                onChange={(e) => handleDateRangeChange(new Date(e.target.value), dateRange.end)}
+                                name="startDate"
+                                className="form-control"
+                                value={dateRange.startDate}
+                                onChange={handleDateChange}
                             />
+                        </div>
+                        <div className="col-md-3">
+                            <label className="form-label">End Date</label>
                             <input
                                 type="date"
-                                onChange={(e) => handleDateRangeChange(dateRange.start, new Date(e.target.value))}
+                                name="endDate"
+                                className="form-control"
+                                value={dateRange.endDate}
+                                onChange={handleDateChange}
                             />
                         </div>
-
-                        {/* Summary View */}
-                        <div className="mb-4">
-                            <h2 className="h5 fw-bold mb-3">Summary View</h2>
-                            <div className="row">
-                                {/* Calendar Heatmap */}
-                                <div className="col-md-6">
-                                    <div className="card">
-                                        <div className="card-body">
-                                            <h3 className="h6 fw-bold">Entry Frequency</h3>
-                                            <Calendar
-                                                localizer={localizer}
-                                                events={filteredEntries.map((entry) => ({
-                                                    title: entry.title,
-                                                    start: new Date(entry.date),
-                                                    end: new Date(entry.date),
-                                                }))}
-                                                startAccessor="start"
-                                                endAccessor="end"
-                                                style={{ height: 300 }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Category Distribution */}
-                                <div className="col-md-6">
-                                    <div className="card">
-                                        <div className="card-body">
-                                            <h3 className="h6 fw-bold">Category Distribution</h3>
-                                            <Pie data={categoryDistributionData} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Word Count Trends */}
-                            <div className="row mt-4">
-                                <div className="col-md-6">
-                                    <div className="card">
-                                        <div className="card-body">
-                                            <h3 className="h6 fw-bold">Word Count Trends</h3>
-                                            <Bar data={wordCountTrendsData} />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                 Word Cloud
-                                <div className="col-md-6">
-                                    <div className="card">
-                                        <div className="card-body">
-                                            <h3 className="h6 fw-bold">Word Cloud</h3>
-                                            {/*<WordCloud words={wordCloudData} />*/}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Data Table */}
-                        <div className="mb-4">
-                            <h2 className="h5 fw-bold mb-3">Journal Entries</h2>
-                            <table className="table">
-                                <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Category</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {filteredEntries.map((entry) => (
-                                    <tr key={entry.id}>
-                                        <td>{entry.title}</td>
-                                        <td>{entry.category}</td>
-                                        <td>{new Date(entry.date).toLocaleDateString()}</td>
-                                        <td>
-                                            <button
-                                                onClick={() => navigate(`/journal/${entry.id}/view`)}
-                                                className="btn btn-sm btn-info me-2"
-                                            >
-                                                <FaEye />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setEditEntry(entry);
-                                                    setIsEditModalOpen(true);
-                                                }}
-                                                className="btn btn-sm btn-warning me-2"
-                                            >
-                                                <FaEdit />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteEntry(entry.id)}
-                                                className="btn btn-sm btn-danger"
-                                            >
-                                                <FaTrash />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                            <button onClick={() => navigate("/journal/add")}
-                                className="btn btn-primary">
-                                <FaPlus className="me-2" />
-                                Add New Entry
+                        <div className="col-md-6 d-flex align-items-end gap-2">
+                            <button
+                                onClick={applyDateFilter}
+                                className="btn btn-primary"
+                                disabled={fetcher.state === "loading"}
+                            >
+                                {fetcher.state === "loading" ? "Applying..." : "Apply Filter"}
+                            </button>
+                            <button
+                                onClick={resetDateFilter}
+                                className="btn btn-outline-secondary"
+                                disabled={fetcher.state === "loading"}
+                            >
+                                Reset
                             </button>
                         </div>
-                    </main>
+                    </div>
                 </div>
+            </div>
 
-                {/* Edit Modal */}
-                {isEditModalOpen && (
-                    <div className="modal" style={{ display: "block", backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
-                        <div className="modal-dialog">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h5 className="modal-title">Edit Journal Entry</h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={() => setIsEditModalOpen(false)}
-                                    ></button>
-                                </div>
-                                <div className="modal-body">
-                                    <JournalEditForm
-                                        entry={editEntry}
-                                        onSubmit={(updatedEntry) => handleEditEntry(editEntry.id, updatedEntry)}
-                                    />
-                                </div>
+            {/* First Row - Category and Mood Charts */}
+            <div className="row mb-4">
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Category Distribution</h5>
+                            <div style={{ height: '300px' }}>
+                                <Pie data={categoryChartData} options={chartOptions} />
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Mood Tracking</h5>
+                            <div style={{ height: '300px' }}>
+                                <Bar
+                                    data={moodChartData}
+                                    options={{
+                                        ...chartOptions,
+                                        indexAxis: 'y'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Second Row - Calendar and Writing Frequency */}
+            <div className="row mb-4">
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Entry Calendar</h5>
+                            <Calendar
+                                localizer={localizer}
+                                events={displayEntries.map(entry => ({
+                                    title: entry.title,
+                                    start: new Date(entry.date),
+                                    end: new Date(entry.date),
+                                }))}
+                                startAccessor="start"
+                                endAccessor="end"
+                                style={{ height: 300 }}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Entry Length by Category</h5>
+                            <div style={{height: '300px'}}>
+                                <Bar
+                                    data={categoryAverageChartData}
+                                    options={{
+                                        ...chartOptions,
+                                        indexAxis: 'x'
+                                    }}
+                                />
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Third Row - Word Count and Word Cloud */}
+            <div className="row mb-4">
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Word Count Trends</h5>
+                            <div style={{height: '300px'}}>
+                                <Line data={wordCountChartData} options={chartOptions} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Word Cloud</h5>
+                            <div className="d-flex justify-content-center">
+                                <canvas
+                                    ref={canvasRef}
+                                    width={450}
+                                    height={300}
+                                    style={{ maxWidth: '100%', height: 'auto' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Fourth Row - Category Averages */}
+            <div className="row mb-4">
+                <div className="col-md-12">
+                    <div className="card h-100">
+                        <div className="card-body">
+                            <h5 className="card-title">Writing Frequency Heatmap</h5>
+                            <div className="col-md-12">
+                                <CalendarHeatmap
+                                    startDate={moment().subtract(1, "year").toDate()}
+                                    endDate={moment().toDate()}
+                                    values={heatmapData}
+                                    classForValue={value => (!value ? "color-empty" : "color-filled")}
+                                />
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Journal Entries Table */}
+            <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                    <h5 className="mb-0">Recent Journal Entries</h5>
+                    <a href="/journal/add" className="btn btn-primary">
+                        <FaPlus className="me-2"/>
+                        Add New Entry
+                    </a>
+                </div>
+                <div className="card-body">
+                    <div className="table-responsive">
+                        <table className="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Mood</th>
+                                <th>Word Count</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {displayEntries.map(entry => (
+                                <tr key={entry.id}>
+                                    <td>{moment(entry.date).format('MMM D, YYYY')}</td>
+                                    <td>
+                                        <a href={`/journals/${entry.id}`} className="text-decoration-none">
+                                            {entry.title || 'Untitled'}
+                                        </a>
+                                    </td>
+                                    <td>
+                                            <span className="badge bg-primary">
+                                                {entry.category.title}
+                                            </span>
+                                    </td>
+                                    <td>
+                                        {entry.mood && (
+                                            <span className={`badge ${
+                                                entry.mood === 'Happy' ? 'bg-success' :
+                                                    entry.mood === 'Sad' ? 'bg-warning text-dark' :
+                                                        'bg-info'
+                                            }`}>
+                                                    {entry.mood}
+                                                </span>
+                                        )}
+                                    </td>
+                                    <td>{entry.content.split(' ').length}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     );
