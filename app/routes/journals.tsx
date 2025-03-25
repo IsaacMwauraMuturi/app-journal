@@ -1,10 +1,27 @@
-// app/routes/journals.tsx
 import { useLoaderData, useFetcher } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
 import { useState, useEffect } from "react";
 import { PrismaClient } from "@prisma/client";
-// import { DeleteJournalButton } from "~/components/delete-journal-button";
+import {
+    CContainer,
+    CRow,
+    CCol,
+    CCard,
+    CCardBody,
+    CCardHeader,
+    CFormInput,
+    CFormSelect,
+    CButton,
+    CSpinner,
+    CTable,
+    CTableHead,
+    CTableRow,
+    CTableHeaderCell,
+    CTableBody,
+    CTableDataCell,
+    CBadge
+} from "@coreui/react";
 
 const prisma = new PrismaClient();
 
@@ -29,12 +46,10 @@ export default function JournalList() {
         moods: []
     });
 
-    // Load initial data
     useEffect(() => {
         fetcher.load("/api/journals");
     }, []);
 
-    // Update data when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         for (const [key, value] of Object.entries(filters)) {
@@ -43,7 +58,6 @@ export default function JournalList() {
         fetcher.load(`/api/journals?${params.toString()}`);
     }, [filters]);
 
-    // Update state when data loads
     useEffect(() => {
         if (fetcher.data) {
             setJournals(fetcher.data.journals);
@@ -52,174 +66,128 @@ export default function JournalList() {
     }, [fetcher.data]);
 
     return (
-        // Todo : Add the header
-        <div className="container py-4">
+        <CContainer fluid className="min-vh-100 d-flex flex-column">
             <h1 className="mb-4">Your Journals</h1>
-
-            {/* Filter Section */}
-            <div className="card mb-4">
-                <div className="card-body">
-                    <h5 className="card-title">Filters</h5>
-                    <div className="row g-3">
-                        <div className="col-md-6">
-                            <label htmlFor="search" className="form-label">Search</label>
-                            <input
+            <CCard className="mb-4">
+                <CCardHeader>Filters</CCardHeader>
+                <CCardBody>
+                    <CRow className="g-3">
+                        <CCol md={6}>
+                            <CFormInput
                                 type="text"
-                                id="search"
-                                className="form-control"
                                 placeholder="Search titles or content..."
                                 value={filters.search}
-                                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                             />
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="category" className="form-label">Category</label>
-                            <select
-                                id="category"
-                                className="form-select"
+                        </CCol>
+                        <CCol md={3}>
+                            <CFormSelect
                                 value={filters.categoryId}
-                                onChange={(e) => setFilters({...filters, categoryId: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
                             >
                                 <option value="">All Categories</option>
                                 {filterOptions.categories.map(category => (
                                     <option key={category.id} value={category.id}>{category.title}</option>
                                 ))}
-                            </select>
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="mood" className="form-label">Mood</label>
-                            <select
-                                id="mood"
-                                className="form-select"
+                            </CFormSelect>
+                        </CCol>
+                        <CCol md={3}>
+                            <CFormSelect
                                 value={filters.mood}
-                                onChange={(e) => setFilters({...filters, mood: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, mood: e.target.value })}
                             >
                                 <option value="">All Moods</option>
                                 {filterOptions.moods.map(mood => (
                                     <option key={mood} value={mood}>{mood}</option>
                                 ))}
-                            </select>
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="startDate" className="form-label">From Date</label>
-                            <input
+                            </CFormSelect>
+                        </CCol>
+                        <CCol md={3}>
+                            <CFormInput
                                 type="date"
-                                id="startDate"
-                                className="form-control"
                                 value={filters.startDate}
-                                onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
                             />
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="endDate" className="form-label">To Date</label>
-                            <input
+                        </CCol>
+                        <CCol md={3}>
+                            <CFormInput
                                 type="date"
-                                id="endDate"
-                                className="form-control"
                                 value={filters.endDate}
-                                onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
                             />
-                        </div>
-                        <div className="col-md-6">
-                            <label htmlFor="tag" className="form-label">Tag</label>
-                            <input
+                        </CCol>
+                        <CCol md={6}>
+                            <CFormInput
                                 type="text"
-                                id="tag"
-                                className="form-control"
                                 placeholder="Filter by tag..."
                                 value={filters.tag}
-                                onChange={(e) => setFilters({...filters, tag: e.target.value})}
+                                onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
                             />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Journal List */}
-            <div className="card">
-                <div className="card-body">
+                        </CCol>
+                    </CRow>
+                </CCardBody>
+            </CCard>
+            <CCard>
+                <CCardBody>
                     {fetcher.state === "loading" ? (
                         <div className="text-center py-4">
-                            <div className="spinner-border" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </div>
+                            <CSpinner color="primary" />
                         </div>
                     ) : journals.length === 0 ? (
                         <div className="text-center py-4">
                             <p>No journals found. Create your first journal!</p>
-                            <a href="/journals/new" className="btn btn-primary">Create Journal</a>
+                            <CButton color="primary" href="/journals/new">Create Journal</CButton>
                         </div>
                     ) : (
-                        <div className="table-responsive">
-                            <table className="table table-hover">
-                                <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Date</th>
-                                    <th>Category</th>
-                                    <th>Mood</th>
-                                    <th>Tags</th>
-                                    <th>Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+                        <CTable hover responsive>
+                            <CTableHead>
+                                <CTableRow>
+                                    <CTableHeaderCell>Title</CTableHeaderCell>
+                                    <CTableHeaderCell>Date</CTableHeaderCell>
+                                    <CTableHeaderCell>Category</CTableHeaderCell>
+                                    <CTableHeaderCell>Mood</CTableHeaderCell>
+                                    <CTableHeaderCell>Tags</CTableHeaderCell>
+                                    <CTableHeaderCell>Actions</CTableHeaderCell>
+                                </CTableRow>
+                            </CTableHead>
+                            <CTableBody>
                                 {journals.map(journal => (
-                                    <tr key={journal.id}>
-                                        <td>
-                                            <a href={`/journals/${journal.id}`} className="text-decoration-none">
+                                    <CTableRow key={journal.id}>
+                                        <CTableDataCell>
+                                            <a href={`/journal/${journal.id}/view`} className="text-decoration-none">
                                                 {journal.title}
                                             </a>
-                                        </td>
-                                        <td>{new Date(journal.date).toLocaleDateString()}</td>
-                                        <td>
-                        <span className="badge bg-primary">
-                          {journal.category.title}
-                        </span>
-                                        </td>
-                                        <td>
+                                        </CTableDataCell>
+                                        <CTableDataCell>{new Date(journal.date).toLocaleDateString()}</CTableDataCell>
+                                        <CTableDataCell>
+                                            <CBadge color="primary">{journal.category.title}</CBadge>
+                                        </CTableDataCell>
+                                        <CTableDataCell>
                                             {journal.mood && (
-                                                <span className={`badge ${
-                                                    journal.mood === 'Happy' ? 'bg-success' :
-                                                        journal.mood === 'Sad' ? 'bg-secondary' :
-                                                            'bg-info'
-                                                }`}>
-                            {journal.mood}
-                          </span>
+                                                <CBadge color={journal.mood === 'Happy' ? 'success' : journal.mood === 'Sad' ? 'secondary' : 'info'}>
+                                                    {journal.mood}
+                                                </CBadge>
                                             )}
-                                        </td>
-                                        <td>
+                                        </CTableDataCell>
+                                        <CTableDataCell>
                                             <div className="d-flex flex-wrap gap-1">
                                                 {journal.tags.map((tag, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="badge bg-light text-dark"
-                                                        onClick={() => setFilters({...filters, tag})}
-                                                        style={{ cursor: 'pointer' }}
-                                                    >
-                              {tag}
-                            </span>
+                                                    <CBadge key={index} color="light" textColor="dark" style={{ cursor: 'pointer' }} onClick={() => setFilters({ ...filters, tag })}>
+                                                        {tag}
+                                                    </CBadge>
                                                 ))}
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div className="d-flex gap-2">
-                                                <a
-                                                    href={`/journals/${journal.id}/edit`}
-                                                    className="btn btn-sm btn-outline-primary"
-                                                >
-                                                    Edit
-                                                </a>
-                                                {/*<DeleteJournalButton journalId={journal.id} />*/}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            <CButton color="outline-primary" size="sm" href={`/journal/${journal.id}/edit`}>Edit</CButton>
+                                        </CTableDataCell>
+                                    </CTableRow>
                                 ))}
-                                </tbody>
-                            </table>
-                        </div>
+                            </CTableBody>
+                        </CTable>
                     )}
-                </div>
-            </div>
-        </div>
+                </CCardBody>
+            </CCard>
+        </CContainer>
     );
 }

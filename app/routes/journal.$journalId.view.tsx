@@ -1,9 +1,8 @@
-// app/routes/journals.$journalId.tsx
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { requireUserSession } from "~/utils/session.server";
 import { PrismaClient } from "@prisma/client";
-import { Form } from "@remix-run/react";
+import { CButton, CCard, CCardBody, CCardHeader, CCardImage, CContainer, CRow, CCol, CBadge } from '@coreui/react';
 
 const prisma = new PrismaClient();
 
@@ -18,7 +17,7 @@ export async function loader({ request, params }) {
     const journal = await prisma.journal.findUnique({
         where: {
             id: journalId,
-            userId: userId // Ensure user can only access their own journals
+            userId: userId
         },
         include: {
             category: true,
@@ -36,15 +35,9 @@ export async function loader({ request, params }) {
         throw new Response("Journal not found", { status: 404 });
     }
 
-    // Parse tags if they exist
     const tags = journal.tags ? JSON.parse(JSON.stringify(journal.tags)) : [];
 
-    return json({
-        journal: {
-            ...journal,
-            tags
-        }
-    });
+    return json({ journal: { ...journal, tags } });
 }
 
 export default function JournalView() {
@@ -58,83 +51,80 @@ export default function JournalView() {
     });
 
     return (
-        // Todo : Add the header
-        <div className="max-w-4xl mx-auto p-6">
-            <Form action={`/journal/${journal.id}/delete`} method="post">
-                <button
-                    type="submit"
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                    onClick={(e) => {
-                        if (!confirm("Are you sure you want to delete this journal?")) {
-                            e.preventDefault();
-                        }
-                    }}
-                >
-                    Delete Journal
-                </button>
-            </Form>
-            <button
-                onClick={() => navigate(-1)}
-                className="mb-4 flex items-center text-blue-600 hover:text-blue-800"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                </svg>
-                Back to Journals
-            </button>
+        <CContainer fluid className="min-vh-100 d-flex flex-column">
+            <CRow className="justify-content-center flex-grow-1">
+                <CCol md={10} lg={8} className="d-flex align-items-center">
+                    <CCard className="w-100 shadow">
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                {journal.image && (
-                    <div className="h-64 overflow-hidden">
-                        <img
-                            src={journal.image}
-                            alt={journal.title}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-                )}
 
-                <div className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                        <h1 className="text-3xl font-bold text-gray-900">{journal.title}</h1>
-                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-              {journal.category.title}
-            </span>
-                    </div>
+                        <CCardHeader className="bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 className="m-0">{journal.title}</h5>
+                        </CCardHeader>
 
-                    <div className="flex items-center text-sm text-gray-500 mb-4">
-                        <span>By {journal.user.name}</span>
-                        <span className="mx-2">•</span>
-                        <span>{formattedDate}</span>
-                        {journal.mood && (
-                            <>
-                                <span className="mx-2">•</span>
-                                <span className="flex items-center">
-                  <span className="mr-1">Mood:</span>
-                  <span className="font-medium capitalize">{journal.mood.toLowerCase()}</span>
-                </span>
-                            </>
-                        )}
-                    </div>
+                        <CCardBody className="d-flex flex-column justify-content-between" style={{ minHeight: "75vh" }}>
+                            <div>
+                                {/* Category Section */}
+                                <div className="mb-3">
+                                    <strong>Category:</strong>
+                                    <CBadge color="dark" className="ms-2">
+                                        {journal.category.title}
+                                    </CBadge>
+                                </div>
 
-                    {journal.tags && journal.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-6">
-                            {journal.tags.map((tag, index) => (
-                                <span
-                                    key={index}
-                                    className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                                {/* Journal Meta Info */}
+                                <div className="d-flex align-items-center text-muted small mb-3">
+                                    <span>By {journal.user.name}</span>
+                                    <span className="mx-2">•</span>
+                                    <span>{formattedDate}</span>
+                                    {journal.mood && (
+                                        <>
+                                            <span className="mx-2">•</span>
+                                            <CBadge color="info" className="text-capitalize">
+                                                {journal.mood.toLowerCase()}
+                                            </CBadge>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Tags Section */}
+                                {journal.tags && journal.tags.length > 0 && (
+                                    <div className="mb-3">
+                                        {journal.tags.map((tag, index) => (
+                                            <CBadge key={index} color="secondary" className="me-1">
+                                                {tag}
+                                            </CBadge>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Content */}
+                                <p className="text-dark">{journal.content}</p>
+                                {journal.image?.trim() && (
+                                    <CCardImage orientation="top" src={journal.image} className="rounded-top" />
+                                )}
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="d-flex justify-content-between mt-4">
+                                <CButton color="danger"
+                                         onClick={(e) => {
+                                             if (!confirm("Are you sure you want to delete this journal?")) {
+                                                 e.preventDefault();
+                                             }
+                                         }}
+                                         href={`/journal/${journal.id}/delete`}
                                 >
-                  {tag}
-                </span>
-                            ))}
-                        </div>
-                    )}
+                                    Delete Journal
+                                </CButton>
 
-                    <div className="prose max-w-none">
-                        <p className="whitespace-pre-line text-gray-700">{journal.content}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                <CButton color="secondary" onClick={() => navigate("/journals")}>
+                                    Back to Journals
+                                </CButton>
+                            </div>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
     );
 }

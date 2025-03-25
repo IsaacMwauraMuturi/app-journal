@@ -1,6 +1,20 @@
 import { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import Navbar from "~/components/Navbar";
+import {
+    CContainer,
+    CRow,
+    CCol,
+    CCard,
+    CCardBody,
+    CCardHeader,
+    CForm,
+    CFormInput,
+    CInputGroup,
+    CInputGroupText,
+    CButton,
+    CAlert,
+    CSpinner
+} from "@coreui/react";
 
 export default function Login() {
     const [error, setError] = useState(null);
@@ -30,8 +44,8 @@ export default function Login() {
                 setError(data.error);
                 setLoading(false);
             } else {
-                localStorage.setItem("authToken", data.token); // Store the token in localStorage
-                window.location.href = "/dashboard"; // Redirect after successful login
+                localStorage.setItem("authToken", data.token);
+                window.location.href = "/dashboard";
             }
         } catch (error) {
             setError("An error occurred. Please try again.");
@@ -40,51 +54,44 @@ export default function Login() {
     };
 
     return (
-        <div>
+        <CContainer fluid className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
+            <CRow className="w-100 justify-content-center">
+                <CCol md={4}>
+                    <CCard className="shadow-lg">
+                        <CCardHeader className="text-center bg-primary text-white">
+                            <h2>Login</h2>
+                        </CCardHeader>
+                        <CCardBody>
+                            {error && <CAlert color="danger">{error}</CAlert>}
+                            <CForm method="post" onSubmit={handleSubmit}>
+                                <CInputGroup className="mb-3">
+                                    <CInputGroupText><FaEnvelope /></CInputGroupText>
+                                    <CFormInput
+                                        type="email"
+                                        name="email"
+                                        placeholder="Email"
+                                        required
+                                    />
+                                </CInputGroup>
 
-        <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
-            <form
-                method="post"
-                onSubmit={handleSubmit}
-                className="w-full max-w-sm bg-white p-8 rounded-lg shadow-lg"
-            >
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login</h2>
+                                <CInputGroup className="mb-4">
+                                    <CInputGroupText><FaLock /></CInputGroupText>
+                                    <CFormInput
+                                        type="password"
+                                        name="password"
+                                        placeholder="Password"
+                                        required
+                                    />
+                                </CInputGroup>
 
-                {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-                <div className="mb-4 relative">
-                    <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
-
-                <div className="mb-6 relative">
-                    <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    disabled={loading}
-                >
-                    {loading ? "Logging in..." : "Login"}
-                </button>
-            </form>
-        </div>
-
-
-        </div>
-            );
+                                <CButton type="submit" color="primary" className="w-100" disabled={loading}>
+                                    {loading ? <CSpinner size="sm" /> : "Login"}
+                                </CButton>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
+    );
 }

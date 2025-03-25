@@ -368,7 +368,7 @@ export default function Dashboard() {
                                 <tr key={entry.id}>
                                     <td>{moment(entry.date).format('MMM D, YYYY')}</td>
                                     <td>
-                                        <a href={`/journals/${entry.id}`} className="text-decoration-none">
+                                        <a href={`/journal/${entry.id}/view`} className="text-decoration-none">
                                             {entry.title || 'Untitled'}
                                         </a>
                                     </td>

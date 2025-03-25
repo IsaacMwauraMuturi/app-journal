@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { CForm, CFormInput, CInputGroup, CInputGroupText, CButton, CAlert, CCard, CCardBody, CCardHeader, CContainer, CRow, CCol } from "@coreui/react";
 import { FaUser, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
-import Navbar from "~/components/Navbar";
-import Footer from "~/components/Footer";
 
 export default function Register() {
     const [formData, setFormData] = useState({
@@ -20,9 +19,8 @@ export default function Register() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null); // Reset error state
+        setError(null);
 
-        // Basic validation
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");
             return;
@@ -30,13 +28,10 @@ export default function Register() {
 
         setLoading(true);
 
-        // Send form data to the backend
         try {
             const response = await fetch("/api/auth/register", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             });
 
@@ -45,9 +40,8 @@ export default function Register() {
             if (!response.ok) {
                 setError(data.error || "Something went wrong");
             } else {
-                // Handle success, for example redirecting to the login page or dashboard
                 alert("Registration successful! Please log in.");
-                window.location.href = "/login"; // Redirect to login page
+                window.location.href = "/login";
             }
         } catch (error) {
             setError("An error occurred, please try again.");
@@ -57,97 +51,47 @@ export default function Register() {
     };
 
     return (
-        <div className="font-sans bg-gray-50 text-gray-900">
+        <CContainer className="d-flex min-vh-100 align-items-center justify-content-center p-3">
+            <CRow className="justify-content-center w-100">
+                <CCol xs={12} sm={10} md={8} lg={6} xl={5}>
+                    <CCard className="shadow">
+                        <CCardHeader className="text-center fw-bold">Register</CCardHeader>
+                        <CCardBody>
+                            {error && <CAlert color="danger">{error}</CAlert>}
+                            <CForm onSubmit={handleSubmit}>
+                                <CInputGroup className="mb-3">
+                                    <CInputGroupText><FaUser /></CInputGroupText>
+                                    <CFormInput type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" required />
+                                </CInputGroup>
 
-        <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
-            <form
-                onSubmit={handleSubmit}
-                className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg"
-            >
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-                    Register
-                </h2>
+                                <CInputGroup className="mb-3">
+                                    <CInputGroupText><FaEnvelope /></CInputGroupText>
+                                    <CFormInput type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required />
+                                </CInputGroup>
 
-                {error && (
-                    <p className="text-red-500 text-sm mb-4">{error}</p>
-                )}
+                                <CInputGroup className="mb-3">
+                                    <CInputGroupText><FaPhone /></CInputGroupText>
+                                    <CFormInput type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" required />
+                                </CInputGroup>
 
-                <div className="mb-4 relative">
-                    <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Full Name"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
+                                <CInputGroup className="mb-3">
+                                    <CInputGroupText><FaLock /></CInputGroupText>
+                                    <CFormInput type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" required />
+                                </CInputGroup>
 
-                <div className="mb-4 relative">
-                    <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
+                                <CInputGroup className="mb-4">
+                                    <CInputGroupText><FaLock /></CInputGroupText>
+                                    <CFormInput type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm Password" required />
+                                </CInputGroup>
 
-                <div className="mb-4 relative">
-                    <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="text"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="Phone Number"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
-
-                <div className="mb-4 relative">
-                    <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Password"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
-
-                <div className="mb-6 relative">
-                    <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="Confirm Password"
-                        required
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    disabled={loading}
-                >
-                    {loading ? "Registering..." : "Register"}
-                </button>
-            </form>
-        </div>
-
-
-        </div>
+                                <CButton type="submit" color="primary" className="w-100" disabled={loading}>
+                                    {loading ? "Registering..." : "Register"}
+                                </CButton>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
+            </CRow>
+        </CContainer>
     );
 }
