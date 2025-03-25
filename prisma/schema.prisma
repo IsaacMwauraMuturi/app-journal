@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,14 +10,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  users User[]
+}
+
 model User {
-  id       Int      @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   name     String
-  email    String   @unique
-  phone    String   @unique
+  email    String  @unique
+  phone    String  @unique
   password String
+  roleId   Int
+  role     Role    @relation(fields: [roleId], references: [id])
   journals Journal[]
 }
+
 
 model JournalCategory {
   id          Int      @id @default(autoincrement())
@@ -36,6 +42,8 @@ model Journal {
   title      String
   content    String
   image      String?
+  mood       String?         // New field for mood tracking
+  tags       Json?           // New field for storing tags as JSON
   userId     Int
   categoryId Int
   user       User            @relation(fields: [userId], references: [id])

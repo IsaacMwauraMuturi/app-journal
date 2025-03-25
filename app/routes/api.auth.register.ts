@@ -41,14 +41,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
+        const userRole = await prisma.role.findUnique({
+            where: { name: "User" } // Ensure "User" role exists in the DB
+        });
 
         // Create new user in the database
+        // Create new user with default role
         const newUser = await prisma.user.create({
             data: {
                 name: name.trim(),
                 email: sanitizedEmail,
                 phone: sanitizedPhone,
                 password: hashedPassword,
+                roleId: userRole?.id || null // Assign roleId, fallback to null if not found
             },
         });
 

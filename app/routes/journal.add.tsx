@@ -1,7 +1,7 @@
 import { Form, useActionData, useNavigation, useLoaderData } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -9,7 +9,31 @@ const prisma = new PrismaClient();
 export async function loader({ request }) {
     const userId = await requireUserSession(request);
     const categories = await prisma.journalCategory.findMany();
-    return json({ categories, userId });
+    const userJournals = await prisma.journal.findMany({
+        where: { userId },
+        include: { category: true },
+    });
+
+    // Get all unique tags from existing journals
+    const allTags = await prisma.journal.findMany({
+        where: { userId },
+        select: { tags: true }
+    });
+
+    const existingTags = Array.from(
+        new Set(
+            allTags
+                .filter(j => j.tags)
+                .flatMap(j => j.tags)
+        )
+    );
+
+    return json({
+        categories,
+        userId,
+        userJournals,
+        existingTags
+    });
 }
 
 export async function action({ request }) {
@@ -21,12 +45,19 @@ export async function action({ request }) {
     const image = formData.get("image")?.toString().trim() || "";
     const date = formData.get("date");
     const categoryInput = formData.get("category")?.toString().trim();
+    const tagsInput = formData.get("tags")?.toString().trim();
+    const manualMood = formData.get("manualMood")?.toString().trim();
 
     if (!title || !content || !date || !categoryInput) {
-        return json({ error: "All fields are required" }, { status: 400 });
+        return json({ error: "Title, content, date and category are required" }, { status: 400 });
     }
 
     try {
+        // Process tags
+        const tags = tagsInput
+            ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+            : [];
+
         // Load NLP libraries dynamically
         const { default: compromise } = await import("compromise");
         const Sentiment = (await import("sentiment")).default;
@@ -38,7 +69,11 @@ export async function action({ request }) {
         // Sentiment analysis
         const sentiment = new Sentiment();
         const sentimentScore = sentiment.analyze(content).score;
-        let mood = sentimentScore > 0 ? "Positive" : sentimentScore < 0 ? "Negative" : "Neutral";
+
+        // Use manual mood if provided, otherwise detect from sentiment
+        let mood = manualMood ||
+            (sentimentScore > 0 ? "Happy" :
+                sentimentScore < 0 ? "Sad" : "Neutral");
 
         // Find or create category
         let category = await prisma.journalCategory.findFirst({
@@ -55,7 +90,7 @@ export async function action({ request }) {
             });
         }
 
-        // Create journal entry
+        // Create journal entry with tags and mood
         await prisma.journal.create({
             data: {
                 title,
@@ -65,60 +100,46 @@ export async function action({ request }) {
                 categoryId: category.id,
                 image,
                 mood,
+                tags,
             },
         });
 
         return redirect("/dashboard");
     } catch (error) {
         console.error("Journal creation error:", error);
-        return json({ error: "Failed to create journal entry. Please try again." }, { status: 500 });
+        return json({
+            error: "Failed to create journal entry. Please try again."
+        }, { status: 500 });
     }
 }
 
 export default function AddJournal() {
-    const { categories } = useLoaderData();
+    const { categories, existingTags } = useLoaderData();
     const actionData = useActionData();
     const navigation = useNavigation();
 
     const [categoryInput, setCategoryInput] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [mood, setMood] = useState("Neutral");
+    const [tags, setTags] = useState("");
+    const [tagSuggestions, setTagSuggestions] = useState([]);
+    const { userJournals } = useLoaderData();
 
-    useEffect(() => {
-        // Ensures hydration matches by waiting for UI updates
-    }, []);
-
-    // const handleContentBlur = useCallback(async (event) => {
-    //     const content = event.target.value.trim();
-    //     if (!content) return;
-    //
-    //     try {
-    //         const { default: compromise } = await import("compromise");
-    //         const doc = compromise(content);
-    //
-    //         const keywords = doc.nouns().out("array").slice(0, 3).join(" ") || "General";
-    //         setCategoryInput(keywords);
-    //
-    //         const positiveWords = doc.match("#Positive").out("array");
-    //         const negativeWords = doc.match("#Negative").out("array");
-    //         setMood(positiveWords.length > negativeWords.length ? "Positive" : negativeWords.length > positiveWords.length ? "Negative" : "Neutral");
-    //     } catch (error) {
-    //         console.error("NLP processing error:", error);
-    //     }
-    // }, []);
     const handleContentBlur = async (event) => {
         const content = event.target.value;
         if (!content) return;
 
         try {
-            // Import Sentiment dynamically
+            // Import NLP tools dynamically
+            const { default: compromise } = await import("compromise");
             const Sentiment = (await import("sentiment")).default;
+
             const sentiment = new Sentiment();
             const sentimentScore = sentiment.analyze(content).score;
 
             let detectedMood = "Neutral";
-            if (sentimentScore > 0) detectedMood = "Positive";
-            else if (sentimentScore < 0) detectedMood = "Negative";
+            if (sentimentScore > 0) detectedMood = "Happy";
+            else if (sentimentScore < 0) detectedMood = "Sad";
 
             setMood(detectedMood);
         } catch (error) {
@@ -140,33 +161,94 @@ export default function AddJournal() {
         }
     }, [categories]);
 
+    const handleTagsChange = (e) => {
+        const value = e.target.value;
+        setTags(value);
+
+        if (value.includes(',')) {
+            setTagSuggestions([]);
+        } else if (value.length > 0) {
+            const filtered = existingTags
+                .filter(tag => tag.toLowerCase().includes(value.toLowerCase()));
+            setTagSuggestions(filtered);
+        } else {
+            setTagSuggestions([]);
+        }
+    };
+
+    const addTagSuggestion = (tag) => {
+        const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+        if (!currentTags.includes(tag)) {
+            setTags(currentTags.concat(tag).join(', '));
+        }
+        setTagSuggestions([]);
+    };
+
     return (
         <div className="container mt-5">
             <div className="card shadow-sm p-4">
                 <h2 className="mb-4">Add New Journal</h2>
 
-                {actionData?.error && <div className="alert alert-danger">{actionData.error}</div>}
+                {actionData?.error && (
+                    <div className="alert alert-danger">{actionData.error}</div>
+                )}
 
                 <Form method="post" className="needs-validation" noValidate>
                     <div className="mb-3">
                         <label htmlFor="title" className="form-label">Title</label>
-                        <input type="text" name="title" id="title" className="form-control" required minLength={3} />
-                        <div className="invalid-feedback">Please provide a title (at least 3 characters)</div>
+                        <input
+                            type="text"
+                            name="title"
+                            id="title"
+                            className="form-control"
+                            required
+                            minLength={3}
+                        />
+                        <div className="invalid-feedback">
+                            Please provide a title (at least 3 characters)
+                        </div>
                     </div>
 
                     <div className="mb-3">
                         <label htmlFor="content" className="form-label">Content</label>
-                        <textarea name="content" id="content" rows={5} className="form-control" required minLength={10} onBlur={handleContentBlur}></textarea>
-                        <div className="invalid-feedback">Please write your journal content (at least 10 characters)</div>
+                        <textarea
+                            name="content"
+                            id="content"
+                            rows={5}
+                            className="form-control"
+                            required
+                            minLength={10}
+                            onChange={handleContentBlur}
+                            onBlur={handleContentBlur}
+                        ></textarea>
+                        <div className="invalid-feedback">
+                            Please write your journal content (at least 10 characters)
+                        </div>
                     </div>
 
                     <div className="mb-3 position-relative">
                         <label htmlFor="category" className="form-label">Category</label>
-                        <input type="text" name="category" id="category" className="form-control" value={categoryInput} onChange={handleCategoryChange} required autoComplete="off" />
+                        <input
+                            type="text"
+                            name="category"
+                            id="category"
+                            className="form-control"
+                            value={categoryInput}
+                            onChange={handleCategoryChange}
+                            required
+                            autoComplete="off"
+                        />
                         {suggestions.length > 0 && (
                             <ul className="list-group position-absolute w-100 z-1">
                                 {suggestions.map((suggestion, index) => (
-                                    <li key={index} className="list-group-item list-group-item-action cursor-pointer" onClick={() => { setCategoryInput(suggestion); setSuggestions([]); }}>
+                                    <li
+                                        key={index}
+                                        className="list-group-item list-group-item-action cursor-pointer"
+                                        onClick={() => {
+                                            setCategoryInput(suggestion);
+                                            setSuggestions([]);
+                                        }}
+                                    >
                                         {suggestion}
                                     </li>
                                 ))}
@@ -174,25 +256,88 @@ export default function AddJournal() {
                         )}
                     </div>
 
+                    <div className="mb-3 position-relative">
+                        <label htmlFor="tags" className="form-label">
+                            Tags (comma separated)
+                        </label>
+                        <input
+                            type="text"
+                            name="tags"
+                            id="tags"
+                            className="form-control"
+                            value={tags}
+                            onChange={handleTagsChange}
+                            placeholder="e.g. work, personal, goals"
+                        />
+                        {tagSuggestions.length > 0 && (
+                            <ul className="list-group position-absolute w-100 z-1">
+                                {tagSuggestions.map((tag, index) => (
+                                    <li
+                                        key={index}
+                                        className="list-group-item list-group-item-action cursor-pointer"
+                                        onClick={() => addTagSuggestion(tag)}
+                                    >
+                                        {tag}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
                     <div className="mb-3">
-                        <label htmlFor="image" className="form-label">Image URL (Optional)</label>
-                        <input type="url" name="image" id="image" className="form-control" placeholder="https://example.com/image.jpg" />
+                        <label htmlFor="image" className="form-label">
+                            Image URL (Optional)
+                        </label>
+                        <input
+                            type="url"
+                            name="image"
+                            id="image"
+                            className="form-control"
+                            placeholder="https://example.com/image.jpg"
+                        />
                     </div>
 
                     <div className="mb-3">
                         <label htmlFor="date" className="form-label">Date</label>
-                        <input type="date" name="date" id="date" className="form-control" required defaultValue={new Date().toISOString().split('T')[0]} />
+                        <input
+                            type="date"
+                            name="date"
+                            id="date"
+                            className="form-control"
+                            required
+                            defaultValue={new Date().toISOString().split('T')[0]}
+                        />
                     </div>
 
                     <div className="mb-3">
-                        <label className="form-label">Detected Mood</label>
-                        <input type="text" className="form-control" value={mood} readOnly />
+                        <label htmlFor="manualMood" className="form-label">
+                            Mood (Detected: {mood})
+                        </label>
+                        <select
+                            name="manualMood"
+                            id="manualMood"
+                            className="form-select"
+                            defaultValue={mood}
+                        >
+                            <option value="Happy">Happy</option>
+                            <option value="Sad">Sad</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Excited">Excited</option>
+                            <option value="Angry">Angry</option>
+                            <option value="Anxious">Anxious</option>
+                            <option value="Calm">Calm</option>
+                        </select>
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={navigation.state === "submitting"}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={navigation.state === "submitting"}
+                    >
                         {navigation.state === "submitting" ? (
                             <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span className="spinner-border spinner-border-sm me-2"
+                                      role="status" aria-hidden="true"></span>
                                 Saving...
                             </>
                         ) : "Add Journal"}

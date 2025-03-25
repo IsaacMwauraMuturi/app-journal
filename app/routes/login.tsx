@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-
 import Navbar from "~/components/Navbar";
-import Footer from "~/components/Footer";
+
 export default function Login() {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -41,7 +40,7 @@ export default function Login() {
     };
 
     return (
-        <div className="font-sans bg-gray-50 text-gray-900">
+        <div>
             <Navbar />
         <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
             <form

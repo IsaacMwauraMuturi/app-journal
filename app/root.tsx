@@ -7,6 +7,7 @@ import {
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
 import bootstrapStyles from "bootstrap/dist/css/bootstrap.min.css?url";
+import { UserProvider } from "~/context/UserContext"; // Import the User Context Provider
 
 import "./tailwind.css"; // Ensure this file exists
 import Footer from "~/components/Footer"; // Your custom Footer component
@@ -36,10 +37,12 @@ export default function App() {
             <Links />
         </head>
         <body className="flex flex-col min-h-screen">
-        {/* Main content */}
-        <div className="flex-1">
-            <Outlet /> {/* Render the current route */}
-        </div>
+        <UserProvider> {/* Wrap around Outlet instead of using children */}
+            {/* Main content */}
+            <div className="flex-1">
+                <Outlet /> {/* Render the current route */}
+            </div>
+        </UserProvider>
 
         {/* Footer at the bottom */}
         <Footer />
