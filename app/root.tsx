@@ -1,16 +1,44 @@
+import { useEffect } from "react";
 import {
     Links,
     Meta,
     Outlet,
     Scripts,
     ScrollRestoration,
+    useLoaderData,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { PrismaClient } from "@prisma/client";
+import { requireUserSession } from "~/utils/session.server";
 import bootstrapStyles from "bootstrap/dist/css/bootstrap.min.css?url";
-import { UserProvider } from "~/context/UserContext"; // Import the User Context Provider
+import { UserProvider } from "~/context/UserContext"; // User Context Provider
 
-import "./tailwind.css"; // Ensure this file exists
-import Footer from "~/components/Footer"; // Your custom Footer component
+import "./tailwind.css"; // Ensure Tailwind is available
+import Footer from "~/components/Footer"; // Custom Footer component
+
+// CoreUI & Bootstrap CSS
+import "@coreui/coreui/dist/css/coreui.min.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import Navbar from "~/components/Navbar";
+
+const prisma = new PrismaClient();
+
+// **Loader to fetch user data**
+export const loader: LoaderFunction = async ({ request }) => {
+    try {
+        const userId = await requireUserSession(request);
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, name: true, email: true },
+        });
+
+        return json({ user: user || null });
+    } catch (error) {
+        return json({ user: null });
+    }
+};
 
 // Define links for stylesheets and fonts
 export const links: LinksFunction = () => [
@@ -19,15 +47,26 @@ export const links: LinksFunction = () => [
     {
         rel: "preconnect",
         href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous", // Required for Google Fonts
+        crossOrigin: "anonymous",
     },
     {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap", // Inter font
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap",
     },
 ];
 
 export default function App() {
+    const { user } = useLoaderData<typeof loader>(); // Get user data
+
+    useEffect(() => {
+        // Dynamically import CoreUI JavaScript on client-side only
+        if (typeof window !== "undefined") {
+            import("@coreui/coreui/dist/js/coreui.bundle.min.js").catch((err) =>
+                console.error("CoreUI JS failed to load:", err)
+            );
+        }
+    }, []);
+
     return (
         <html lang="en">
         <head>
@@ -37,11 +76,9 @@ export default function App() {
             <Links />
         </head>
         <body className="flex flex-col min-h-screen">
-        <UserProvider> {/* Wrap around Outlet instead of using children */}
-            {/* Main content */}
-            <div className="flex-1">
-                <Outlet /> {/* Render the current route */}
-            </div>
+        <UserProvider user={user}>
+            <Navbar />
+            <Outlet />
         </UserProvider>
 
         {/* Footer at the bottom */}

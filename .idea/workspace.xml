@@ -4,23 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders">
-      <change afterPath="$PROJECT_DIR$/app/routes/api.journals.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/routes/api.user.tags.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.delete.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/routes/journals.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Footer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" afterDir="false" />
+    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Journal Complete CRUD completed.&#10;Start of UI/UX design">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Navbar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/context/UserContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/context/UserContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes/_index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/_index.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/dashboard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/journal.add.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.add.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/profile.edit.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/profile.edit.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/viewprofile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/viewprofile.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/register.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/register.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/utils/session.server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/utils/session.server.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +79,7 @@
       <updated>1742514031556</updated>
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
-      <workItem from="1742842311512" duration="14753000" />
+      <workItem from="1742842311512" duration="20535000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -134,7 +129,23 @@
       <option name="project" value="LOCAL" />
       <updated>1742895857858</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Journal Complete CRUD completed.&#10;Start of UI/UX design">
+      <option name="closed" value="true" />
+      <created>1742901207008</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1742901207008</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Journal Complete CRUD completed.&#10;Start of UI/UX design">
+      <option name="closed" value="true" />
+      <created>1742901224672</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1742901224672</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -162,6 +173,7 @@
     <MESSAGE value="Dashboard created successful" />
     <MESSAGE value="Added Natutal Language processing when creating Journal" />
     <MESSAGE value="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders" />
-    <option name="LAST_COMMIT_MESSAGE" value="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders" />
+    <MESSAGE value="Journal Complete CRUD completed.&#10;Start of UI/UX design" />
+    <option name="LAST_COMMIT_MESSAGE" value="Journal Complete CRUD completed.&#10;Start of UI/UX design" />
   </component>
 </project>

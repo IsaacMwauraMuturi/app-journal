@@ -1,128 +1,95 @@
-// app/components/Navbar.tsx
-import { Link } from "@remix-run/react";
-import { FaHome, FaSignInAlt, FaUserPlus, FaCaretDown } from "react-icons/fa";
-
+import {
+    CNavbar,
+    CContainer,
+    CNavbarBrand,
+    CNavbarNav,
+    CNavItem,
+    CNavLink,
+    CCollapse,
+    CButton,
+    CDropdown,
+    CDropdownToggle,
+    CDropdownMenu,
+    CDropdownItem,
+} from "@coreui/react";
+import { FaHome, FaSignInAlt, FaUserPlus, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { useUser } from "~/context/UserContext";
+import { useState } from "react";
+import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react"; // Import useFetcher
 export default function Navbar() {
+    const user = useUser(); // Get authenticated user
+    const [visible, setVisible] = useState(false); // Toggle menu visibility
+    const fetcher = useFetcher(); // Initialize fetcher for AJAX requests
+    const handleLogout = (event: React.FormEvent) => {
+        event.preventDefault(); // Prevent full-page reload
+        fetcher.submit(null, { method: "post", action: "/api/auth/logout" });
+    };
     return (
-        // Todo : Make the Nav Dynamic to Logged in user and Admin
-        <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-            <div className="container-fluid">
-                {/* Brand Logo */}
-                <Link to="/" className="navbar-brand d-flex align-items-center">
+        <CNavbar expand="lg" colorScheme="light" className="bg-primary text-white fixed-top shadow">
+            <CContainer fluid>
+                <CNavbarBrand href="/" className="text-white fw-bold">
                     <img
-                        src="https://via.placeholder.com/40" // Replace with your logo
-                        alt="MyJournal Logo"
+                        src="https://images.squarespace-cdn.com/content/v1/5b4bc08596d455c3eeb28f48/0f1735c7-3e00-4dba-98a8-a6986f8b4fd0/Level+Up+Journal+Deals"
+                        alt="MyJournal"
                         className="me-2"
-                        style={{ height: "40px" }}
+                        style={{height: "40px"}}
                     />
-                    <span className="fw-bold">MyJournal</span>
-                </Link>
 
-                {/* Mobile Toggle Button */}
-                <button
-                    className="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
+                </CNavbarBrand>
+
+                {/* Toggle button for small screens */}
+                <CButton
+                    color="light"
+                    className="d-lg-none text-white"
+                    onClick={() => setVisible(!visible)}
                 >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                    ☰
+                </CButton>
 
-                {/* Navbar Links */}
-                <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ms-auto">
-                        {/* Home Link */}
-                        <li className="nav-item">
-                            <Link to="/" className="nav-link d-flex align-items-center">
-                                <FaHome className="me-2" />
-                                Home
-                            </Link>
-                        </li>
+                <CCollapse className="navbar-collapse" visible={visible}>
+                    <CNavbarNav className="ms-auto">
+                        <CNavItem>
+                            <CNavLink href="/" className="text-white">
+                                <FaHome className="me-2" /> Home
+                            </CNavLink>
+                        </CNavItem>
 
-                        {/* Mega Menu Dropdown */}
-                        <li className="nav-item dropdown">
-                            <a
-                                className="nav-link dropdown-toggle d-flex align-items-center"
-                                href="#"
-                                id="megaMenuDropdown"
-                                role="button"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                            >
-                                <FaCaretDown className="me-2" />
-                                Features
-                            </a>
-                            <div
-                                className="dropdown-menu dropdown-mega-menu"
-                                aria-labelledby="megaMenuDropdown"
-                            >
-                                <div className="row">
-                                    <div className="col-md-4">
-                                        <h6 className="dropdown-header">Journal Features</h6>
-                                        <Link to="/secure" className="dropdown-item">
-                                            Secure & Private
-                                        </Link>
-                                        <Link to="/design" className="dropdown-item">
-                                            Beautiful Design
-                                        </Link>
-                                        <Link to="/access" className="dropdown-item">
-                                            Access Anywhere
-                                        </Link>
-                                    </div>
-                                    <div className="col-md-4">
-                                        <h6 className="dropdown-header">Tools</h6>
-                                        <Link to="/reminders" className="dropdown-item">
-                                            Reminders
-                                        </Link>
-                                        <Link to="/templates" className="dropdown-item">
-                                            Templates
-                                        </Link>
-                                        <Link to="/analytics" className="dropdown-item">
-                                            Analytics
-                                        </Link>
-                                    </div>
-                                    <div className="col-md-4">
-                                        <h6 className="dropdown-header">Support</h6>
-                                        <Link to="/help" className="dropdown-item">
-                                            Help Center
-                                        </Link>
-                                        <Link to="/contact" className="dropdown-item">
-                                            Contact Us
-                                        </Link>
-                                        <Link to="/faq" className="dropdown-item">
-                                            FAQ
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-
-                        {/* Login Link */}
-                        <li className="nav-item">
-                            <Link to="/login" className="nav-link d-flex align-items-center">
-                                <FaSignInAlt className="me-2" />
-                                Login
-                            </Link>
-                        </li>
-
-                        {/* Sign Up Link */}
-                        <li className="nav-item">
-                            <Link
-                                to="/register"
-                                className="nav-link btn btn-primary text-white d-flex align-items-center"
-                            >
-                                <FaUserPlus className="me-2" />
-                                Sign Up
-                            </Link>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
-
+                        {!user ? (
+                            <>
+                                <CNavItem>
+                                    <CNavLink href="/login" className="text-white">
+                                        <FaSignInAlt className="me-2" /> Login
+                                    </CNavLink>
+                                </CNavItem>
+                                <CNavItem>
+                                    <CNavLink href="/register" className="text-white">
+                                        <FaUserPlus className="me-2" /> Register
+                                    </CNavLink>
+                                </CNavItem>
+                            </>
+                        ) : (
+                            <CDropdown variant="nav-item">
+                                <CDropdownToggle color="light" className="text-white">
+                                    <FaUser className="me-2" /> {user.name}
+                                </CDropdownToggle>
+                                <CDropdownMenu>
+                                    <CDropdownItem href="/viewprofile">
+                                        <FaUser className="me-2" /> Profile
+                                    </CDropdownItem>
+                                    <CDropdownItem as="div">
+                                        <form onSubmit={handleLogout}>
+                                            <button type="submit" className="bg-transparent border-0 text-dark">
+                                                <FaSignOutAlt className="me-2" /> Logout
+                                            </button>
+                                        </form>
+                                    </CDropdownItem>
+                                </CDropdownMenu>
+                            </CDropdown>
+                        )}
+                    </CNavbarNav>
+                </CCollapse>
+            </CContainer>
+        </CNavbar>
     );
 }

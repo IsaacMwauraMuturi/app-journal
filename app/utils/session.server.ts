@@ -12,7 +12,10 @@ const storage = createCookieSessionStorage({
         httpOnly: true, // HttpOnly cookie
     },
 });
-
+// export async function isUserLoggedIn(request: Request) {
+//     const session = await getSession(request.headers.get("Cookie"));
+//     return session.has("userId"); // Adjust this based on how you're storing user sessions
+// }
 // Get the user session
 export async function getSession(request: Request) {
     const cookie = request.headers.get("Cookie");

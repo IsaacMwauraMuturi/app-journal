@@ -113,7 +113,7 @@ export default function Dashboard() {
 
     return (
         <div className="font-sans bg-gray-50 text-gray-900">
-            <Navbar />
+
             <div className="d-flex min-vh-100 bg-light">
                 {/* Sidebar */}
                 // Todo : Remove the header use main nav

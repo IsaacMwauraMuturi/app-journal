@@ -41,7 +41,7 @@ export default function Login() {
 
     return (
         <div>
-            <Navbar />
+
         <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
             <form
                 method="post"

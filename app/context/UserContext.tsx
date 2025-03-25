@@ -1,21 +1,11 @@
 import { createContext, useContext } from "react";
-import { useLoaderData } from "@remix-run/react";
 
-// Create context
 const UserContext = createContext(null);
 
-// Provider component
-export const UserProvider = ({ children }) => {
-    const { userId } = useLoaderData() || {}; // ✅ Ensure no error when data is null
+export function UserProvider({ user, children }) {
+    return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
+}
 
-    return (
-        <UserContext.Provider value={{ userId }}>
-            {children}
-        </UserContext.Provider>
-    );
-};
-
-// Custom hook
-export const useUser = () => {
+export function useUser() {
     return useContext(UserContext);
-};
+}

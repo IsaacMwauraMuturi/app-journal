@@ -11,6 +11,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@coreui/coreui": "^5.2.0",
+    "@coreui/react": "^5.5.0",
     "@popperjs/core": "^2.11.8",
     "@prisma/client": "^6.5.0",
     "@remix-run/node": "^2.16.2",
