@@ -1,14 +1,15 @@
-// app/routes/profile.edit.tsx
 import { PrismaClient } from "@prisma/client";
 import { requireUserSession } from "~/utils/session.server";
-import { Form, useLoaderData, useNavigation } from "@remix-run/react";
+import { Form, useLoaderData, useActionData, useNavigation } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { validateName, validateEmail, validatePhone } from "~/utils/validators";
 import bcrypt from "bcryptjs";
-const prisma = new PrismaClient();
-export async function loader({ request }: { request: Request }) {
-    const userId = await requireUserSession(request);
+import {  CContainer, CRow,CCard, CCardBody, CCardHeader, CForm, CFormInput, CFormLabel, CButton, CAlert } from "@coreui/react";
 
+const prisma = new PrismaClient();
+
+export async function loader({ request }) {
+    const userId = await requireUserSession(request);
     const user = await prisma.user.findUnique({
         where: { id: parseInt(userId) },
         select: { id: true, name: true, email: true, phone: true }
@@ -17,39 +18,32 @@ export async function loader({ request }: { request: Request }) {
     if (!user) {
         throw redirect("/login");
     }
-
     return json({ user });
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }) {
     const userId = await requireUserSession(request);
     const formData = await request.formData();
 
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const currentPassword = formData.get("currentPassword") as string;
-    const newPassword = formData.get("newPassword") as string;
-    const confirmPassword = formData.get("confirmPassword") as string;
+    const name = formData.get("name");
+    const email = formData.get("email");
+    const phone = formData.get("phone");
+    const currentPassword = formData.get("currentPassword");
+    const newPassword = formData.get("newPassword");
+    const confirmPassword = formData.get("confirmPassword");
 
-    // Validate profile inputs
     const errors = {
         name: validateName(name),
         email: validateEmail(email),
         phone: validatePhone(phone),
-        password: null as string | null,
+        password: null,
     };
 
-    // Password change validation
     if (newPassword || confirmPassword || currentPassword) {
         if (!currentPassword) {
-            errors.password = "Current password is required to change password";
+            errors.password = "Current password is required";
         } else {
-            const user = await prisma.user.findUnique({
-                where: { id: parseInt(userId) },
-                select: { password: true }
-            });
-
+            const user = await prisma.user.findUnique({ where: { id: parseInt(userId) }, select: { password: true } });
             if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
                 errors.password = "Current password is incorrect";
             } else if (newPassword !== confirmPassword) {
@@ -60,182 +54,76 @@ export async function action({ request }: { request: Request }) {
         }
     }
 
-    // Return errors if any validation fails
     if (Object.values(errors).some(error => error !== null)) {
         return json({ errors }, { status: 400 });
     }
 
     try {
-        const updateData: {
-            name: string;
-            email: string;
-            phone: string;
-            password?: string;
-        } = { name, email, phone };
-
-        // Only update password if new password was provided
+        const updateData = { name, email, phone };
         if (newPassword) {
             updateData.password = await bcrypt.hash(newPassword, 10);
         }
 
-        await prisma.user.update({
-            where: { id: parseInt(userId) },
-            data: updateData
-        });
-
+        await prisma.user.update({ where: { id: parseInt(userId) }, data: updateData });
         return redirect("/viewprofile");
     } catch (error) {
-        // Handle unique constraint violations
-        if (error instanceof Error && error.message.includes("Unique constraint")) {
-            if (error.message.includes("email")) {
-                return json(
-                    { errors: { email: "This email is already in use" } },
-                    { status: 400 }
-                );
-            }
-            if (error.message.includes("phone")) {
-                return json(
-                    { errors: { phone: "This phone number is already in use" } },
-                    { status: 400 }
-                );
-            }
-        }
-        return json({
-            error: "An unexpected error occurred. Please try again."
-        }, { status: 500 });
+        return json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
     }
 }
 
 export default function EditProfile() {
-    const { user } = useLoaderData<typeof loader>();
+    const { user } = useLoaderData();
+    const actionData = useActionData();
     const navigation = useNavigation();
     const isSubmitting = navigation.state === "submitting";
-    const actionData = navigation.formData
-        ? null
-        : navigation.formAction === navigation.location?.pathname
-            ? navigation.json
-            : null;
 
     return (
-        // Todo : Add the header
-        <div style={{ maxWidth: "500px", margin: "0 auto", padding: "20px" }}>
-            <h1>Edit Profile</h1>
-            <Form method="post">
-                <div style={{ marginBottom: "15px" }}>
-                    <label>
-                        Name:
-                        <input
-                            type="text"
-                            name="name"
-                            defaultValue={user.name}
-                            style={{ width: "100%", padding: "8px" }}
-                            required
-                        />
-                        {actionData?.errors?.name && (
-                            <p style={{ color: "red", fontSize: "0.8rem" }}>{actionData.errors.name}</p>
-                        )}
-                    </label>
-                </div>
+        <CContainer  className="pt-5 min-vh-100 ">
+            <CRow className="pt-5 justify-content-center">
+                <CCard>
+                    <CCardHeader>Edit Profile</CCardHeader>
+                    <CCardBody>
+                        {actionData?.error && <CAlert color="danger">{actionData.error}</CAlert>}
 
-                <div style={{ marginBottom: "15px" }}>
-                    <label>
-                        Email:
-                        <input
-                            type="email"
-                            name="email"
-                            defaultValue={user.email}
-                            style={{ width: "100%", padding: "8px" }}
-                            required
-                        />
-                        {actionData?.errors?.email && (
-                            <p style={{ color: "red", fontSize: "0.8rem" }}>
-                                {actionData.errors.email}
-                            </p>
-                        )}
-                    </label>
-                </div>
+                        <CForm method="post">
+                            <div className="mb-3">
+                                <CFormLabel>Name</CFormLabel>
+                                <CFormInput type="text" name="name" defaultValue={user.name} required />
+                                {actionData?.errors?.name && <CAlert color="danger">{actionData.errors.name}</CAlert>}
+                            </div>
+                            <div className="mb-3">
+                                <CFormLabel>Email</CFormLabel>
+                                <CFormInput type="email" name="email" defaultValue={user.email} required />
+                                {actionData?.errors?.email && <CAlert color="danger">{actionData.errors.email}</CAlert>}
+                            </div>
+                            <div className="mb-3">
+                                <CFormLabel>Phone</CFormLabel>
+                                <CFormInput type="tel" name="phone" defaultValue={user.phone} required />
+                                {actionData?.errors?.phone && <CAlert color="danger">{actionData.errors.phone}</CAlert>}
+                            </div>
 
-                <div style={{ marginBottom: "15px" }}>
-                    <label>
-                        Phone:
-                        <input
-                            type="tel"
-                            name="phone"
-                            defaultValue={user.phone}
-                            style={{ width: "100%", padding: "8px" }}
-                            required
-                        />
-                        {actionData?.errors?.phone && (
-                            <p style={{ color: "red", fontSize: "0.8rem" }}>
-                                {actionData.errors.phone}
-                            </p>
-                        )}
-                    </label>
-                </div>
+                            <h5>Change Password</h5>
+                            <div className="mb-3">
+                                <CFormLabel>Current Password</CFormLabel>
+                                <CFormInput type="password" name="currentPassword" />
+                            </div>
+                            <div className="mb-3">
+                                <CFormLabel>New Password</CFormLabel>
+                                <CFormInput type="password" name="newPassword" />
+                            </div>
+                            <div className="mb-3">
+                                <CFormLabel>Confirm New Password</CFormLabel>
+                                <CFormInput type="password" name="confirmPassword" />
+                            </div>
+                            {actionData?.errors?.password && <CAlert color="danger">{actionData.errors.password}</CAlert>}
 
-                <div style={{ margin: "30px 0 15px", borderTop: "1px solid #eee", paddingTop: "20px" }}>
-                    <h3>Change Password</h3>
-
-                    <div style={{ marginBottom: "15px" }}>
-                        <label>
-                            Current Password:
-                            <input
-                                type="password"
-                                name="currentPassword"
-                                style={{ width: "100%", padding: "8px" }}
-                            />
-                        </label>
-                    </div>
-
-                    <div style={{ marginBottom: "15px" }}>
-                        <label>
-                            New Password:
-                            <input
-                                type="password"
-                                name="newPassword"
-                                style={{ width: "100%", padding: "8px" }}
-                            />
-                        </label>
-                    </div>
-
-                    <div style={{ marginBottom: "15px" }}>
-                        <label>
-                            Confirm New Password:
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                style={{ width: "100%", padding: "8px" }}
-                            />
-                        </label>
-                    </div>
-
-                    {actionData?.errors?.password && (
-                        <p style={{ color: "red", fontSize: "0.8rem" }}>
-                            {actionData.errors.password}
-                        </p>
-                    )}
-                </div>
-
-                {actionData?.error && !actionData?.errors && (
-                    <p style={{ color: "red", marginBottom: "15px" }}>
-                        {actionData.error}
-                    </p>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    style={{
-                        padding: "10px 15px",
-                        background: isSubmitting ? "#ccc" : "#007bff",
-                        color: "white",
-                        border: "none",
-                        cursor: "pointer"
-                    }}
-                >
-                    {isSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-            </Form>
-        </div>
+                            <CButton type="submit" color="primary" disabled={isSubmitting}>
+                                {isSubmitting ? "Saving..." : "Save Changes"}
+                            </CButton>
+                        </CForm>
+                    </CCardBody>
+                </CCard>
+            </CRow>
+        </CContainer>
     );
 }

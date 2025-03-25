@@ -4,15 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="UI/UX design and improvements dashboard.tsx">
+    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="UI/UX design and improvements&#10;dashboard.tsx&#10;Footer.tsx&#10;journal.$journalId.view.tsx&#10;journals.tsx&#10;login.tsx&#10;register.tsx&#10;root.tsx">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Footer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/dashboard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/journals.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journals.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/login.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/register.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/register.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/profile.edit.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/profile.edit.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/viewprofile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/viewprofile.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +71,7 @@
       <updated>1742514031556</updated>
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
-      <workItem from="1742842311512" duration="32740000" />
+      <workItem from="1742842311512" duration="34253000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -158,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742919993907</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="UI/UX design and improvements&#10;dashboard.tsx&#10;Footer.tsx&#10;journal.$journalId.view.tsx&#10;journals.tsx&#10;login.tsx&#10;register.tsx&#10;root.tsx">
+      <option name="closed" value="true" />
+      <created>1742922783339</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1742922783339</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -189,6 +192,7 @@
     <MESSAGE value="Journal Complete CRUD completed.&#10;Start of UI/UX design" />
     <MESSAGE value="UI/UX design and improvements &#10;Landing page&#10;Navigation&#10;Completed" />
     <MESSAGE value="UI/UX design and improvements dashboard.tsx" />
-    <option name="LAST_COMMIT_MESSAGE" value="UI/UX design and improvements dashboard.tsx" />
+    <MESSAGE value="UI/UX design and improvements&#10;dashboard.tsx&#10;Footer.tsx&#10;journal.$journalId.view.tsx&#10;journals.tsx&#10;login.tsx&#10;register.tsx&#10;root.tsx" />
+    <option name="LAST_COMMIT_MESSAGE" value="UI/UX design and improvements&#10;dashboard.tsx&#10;Footer.tsx&#10;journal.$journalId.view.tsx&#10;journals.tsx&#10;login.tsx&#10;register.tsx&#10;root.tsx" />
   </component>
 </project>
