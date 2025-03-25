@@ -40,6 +40,7 @@ export default function ProfilePage() {
     const { user } = useLoaderData<typeof loader>();
 
     return (
+        // Todo : Add the header
         <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
             <div style={{
                 display: "flex",

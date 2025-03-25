@@ -2,6 +2,7 @@ import { Link } from "@remix-run/react";
 
 export default function Sidebar() {
     return (
+        // Todo : Rethink the implimentation
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
             <div className="p-6">
                 <h2 className="text-xl font-bold text-purple-600">MyJournal</h2>

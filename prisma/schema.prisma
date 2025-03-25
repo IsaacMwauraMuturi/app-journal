@@ -49,3 +49,4 @@ model Journal {
   user       User            @relation(fields: [userId], references: [id])
   category   JournalCategory @relation(fields: [categoryId], references: [id])
 }
+

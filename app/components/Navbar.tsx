@@ -4,6 +4,7 @@ import { FaHome, FaSignInAlt, FaUserPlus, FaCaretDown } from "react-icons/fa";
 
 export default function Navbar() {
     return (
+        // Todo : Make the Nav Dynamic to Logged in user and Admin
         <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
             <div className="container-fluid">
                 {/* Brand Logo */}

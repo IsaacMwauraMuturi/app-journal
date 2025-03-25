@@ -5,6 +5,7 @@ import Footer from "~/components/Footer";
 
 export default function Index() {
     return (
+        // Todo : Make the landing page more appealing
         <div className="font-sans bg-light text-dark">
             {/* Navbar */}
             <Navbar />

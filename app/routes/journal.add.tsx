@@ -1,7 +1,7 @@
 import { Form, useActionData, useNavigation, useLoaderData } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -14,17 +14,24 @@ export async function loader({ request }) {
         include: { category: true },
     });
 
-    // Get all unique tags from existing journals
-    const allTags = await prisma.journal.findMany({
+    // Get all journals to extract tags
+    const allJournals = await prisma.journal.findMany({
         where: { userId },
-        select: { tags: true }
     });
 
+    // Extract tags from JSON field
     const existingTags = Array.from(
         new Set(
-            allTags
+            allJournals
                 .filter(j => j.tags)
-                .flatMap(j => j.tags)
+                .flatMap(j => {
+                    try {
+                        return typeof j.tags === 'string' ? JSON.parse(j.tags) : j.tags;
+                    } catch {
+                        return [];
+                    }
+                })
+                .filter(tag => tag) // Remove any null/undefined tags
         )
     );
 
@@ -46,34 +53,18 @@ export async function action({ request }) {
     const date = formData.get("date");
     const categoryInput = formData.get("category")?.toString().trim();
     const tagsInput = formData.get("tags")?.toString().trim();
-    const manualMood = formData.get("manualMood")?.toString().trim();
+    const mood = formData.get("manualMood")?.toString().trim();
 
     if (!title || !content || !date || !categoryInput) {
         return json({ error: "Title, content, date and category are required" }, { status: 400 });
     }
 
     try {
-        // Process tags
+        // Process tags into JSON array
         const tags = tagsInput
             ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-            : [];
+            : null;
 
-        // Load NLP libraries dynamically
-        const { default: compromise } = await import("compromise");
-        const Sentiment = (await import("sentiment")).default;
-
-        // Process content with NLP
-        let doc = compromise(content);
-        content = doc.sentences().toTitleCase().out();
-
-        // Sentiment analysis
-        const sentiment = new Sentiment();
-        const sentimentScore = sentiment.analyze(content).score;
-
-        // Use manual mood if provided, otherwise detect from sentiment
-        let mood = manualMood ||
-            (sentimentScore > 0 ? "Happy" :
-                sentimentScore < 0 ? "Sad" : "Neutral");
 
         // Find or create category
         let category = await prisma.journalCategory.findFirst({
@@ -89,8 +80,6 @@ export async function action({ request }) {
                 },
             });
         }
-
-        // Create journal entry with tags and mood
         await prisma.journal.create({
             data: {
                 title,
@@ -98,11 +87,24 @@ export async function action({ request }) {
                 date: new Date(date),
                 userId,
                 categoryId: category.id,
-                image,
-                mood,
-                tags,
+                image: image || undefined,
+                mood: mood || undefined,
+                tags: tags ? JSON.parse(JSON.stringify(tags)) : undefined,
             },
         });
+        // // Create journal entry with tags and mood
+        // await prisma.journal.create({
+        //     data: {
+        //         title,
+        //         content,
+        //         date: new Date(date),
+        //         userId,
+        //         categoryId: category.id,
+        //         image,
+        //         mood,
+        //         tags: tags || undefined, // Use undefined instead of null for Prisma
+        //     },
+        // });
 
         return redirect("/dashboard");
     } catch (error) {
@@ -185,6 +187,7 @@ export default function AddJournal() {
     };
 
     return (
+        // Todo : Add the header// Todo : Add the header
         <div className="container mt-5">
             <div className="card shadow-sm p-4">
                 <h2 className="mb-4">Add New Journal</h2>

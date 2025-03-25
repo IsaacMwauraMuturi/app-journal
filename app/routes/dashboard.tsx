@@ -116,7 +116,7 @@ export default function Dashboard() {
             <Navbar />
             <div className="d-flex min-vh-100 bg-light">
                 {/* Sidebar */}
-
+                // Todo : Remove the header use main nav
                 {/* Main Content */}
                 <div className="flex-grow-1 d-flex flex-column">
                     {/* Header */}

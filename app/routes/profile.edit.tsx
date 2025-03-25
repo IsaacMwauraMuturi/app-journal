@@ -117,6 +117,7 @@ export default function EditProfile() {
             : null;
 
     return (
+        // Todo : Add the header
         <div style={{ maxWidth: "500px", margin: "0 auto", padding: "20px" }}>
             <h1>Edit Profile</h1>
             <Form method="post">
