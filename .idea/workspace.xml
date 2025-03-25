@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders">
+      <change afterPath="$PROJECT_DIR$/app/routes/api.journals.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routes/api.user.tags.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.delete.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/routes/journals.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/Footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Footer.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/_index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/_index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journal.add.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.add.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/profile.edit.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/profile.edit.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/viewprofile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/viewprofile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FormatOnSaveOptions">
+    <option name="myRunOnSave" value="false" />
+    <option name="myAllFileTypesSelected" value="true" />
+    <option name="mySelectedFileTypes">
+      <set />
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="2ubOuk0t9JpoUUTC2bvvPGrLO8Y" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "D:/interview project/app-journal/prisma",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "ts.external.directory.path": "D:\\interview project\\app-journal\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\interview project\app-journal\prisma" />
+      <recent name="D:\interview project\app-journal\app\routes\api" />
+      <recent name="D:\interview project\app-journal\app\routes" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\interview project\app-journal\app\src\routes" />
+      <recent name="D:\interview project\app-journal\app\routes" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="" />
+      <created>1742514031556</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1742514031556</updated>
+      <workItem from="1742514032782" duration="4939000" />
+      <workItem from="1742772529345" duration="43431000" />
+      <workItem from="1742842311512" duration="14753000" />
+    </task>
+    <task id="LOCAL-00001" summary="New Progress">
+      <option name="closed" value="true" />
+      <created>1742789439656</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1742789439657</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Journal creation successful">
+      <option name="closed" value="true" />
+      <created>1742792603109</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1742792603109</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Dashboard created successful">
+      <option name="closed" value="true" />
+      <created>1742810923679</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1742810923679</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added Natural Language processing when creating Journal">
+      <option name="closed" value="true" />
+      <created>1742820907931</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1742820907931</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders">
+      <option name="closed" value="true" />
+      <created>1742895814298</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1742895814298</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders">
+      <option name="closed" value="true" />
+      <created>1742895857858</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1742895857858</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+    <option name="exactExcludedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/tailwind.config.js" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="New Progress" />
+    <MESSAGE value="Journal creation successful" />
+    <MESSAGE value="Dashboard created successful" />
+    <MESSAGE value="Added Natutal Language processing when creating Journal" />
+    <MESSAGE value="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders" />
+    <option name="LAST_COMMIT_MESSAGE" value="Profile Preferences and Journal migration profile.edit.tsx viewprofile.tsx and altered schema to allow user role, tags, and moods to journal. Also created Role seeders" />
+  </component>
+</project>
