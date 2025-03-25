@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
 import { useState, useEffect, useCallback } from "react";
 import { PrismaClient } from "@prisma/client";
+import {CCard, CCardBody, CCardHeader, CContainer} from "@coreui/react";
 
 const prisma = new PrismaClient();
 
@@ -14,12 +15,10 @@ export async function loader({ request }) {
         include: { category: true },
     });
 
-    // Get all journals to extract tags
     const allJournals = await prisma.journal.findMany({
         where: { userId },
     });
 
-    // Extract tags from JSON field
     const existingTags = Array.from(
         new Set(
             allJournals
@@ -31,7 +30,7 @@ export async function loader({ request }) {
                         return [];
                     }
                 })
-                .filter(tag => tag) // Remove any null/undefined tags
+                .filter(tag => tag)
         )
     );
 
@@ -60,13 +59,10 @@ export async function action({ request }) {
     }
 
     try {
-        // Process tags into JSON array
         const tags = tagsInput
             ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
             : null;
 
-
-        // Find or create category
         let category = await prisma.journalCategory.findFirst({
             where: { title: categoryInput },
         });
@@ -92,19 +88,6 @@ export async function action({ request }) {
                 tags: tags ? JSON.parse(JSON.stringify(tags)) : undefined,
             },
         });
-        // // Create journal entry with tags and mood
-        // await prisma.journal.create({
-        //     data: {
-        //         title,
-        //         content,
-        //         date: new Date(date),
-        //         userId,
-        //         categoryId: category.id,
-        //         image,
-        //         mood,
-        //         tags: tags || undefined, // Use undefined instead of null for Prisma
-        //     },
-        // });
 
         return redirect("/dashboard");
     } catch (error) {
@@ -132,7 +115,6 @@ export default function AddJournal() {
         if (!content) return;
 
         try {
-            // Import NLP tools dynamically
             const { default: compromise } = await import("compromise");
             const Sentiment = (await import("sentiment")).default;
 
@@ -140,8 +122,15 @@ export default function AddJournal() {
             const sentimentScore = sentiment.analyze(content).score;
 
             let detectedMood = "Neutral";
-            if (sentimentScore > 0) detectedMood = "Happy";
-            else if (sentimentScore < 0) detectedMood = "Sad";
+
+            // Enhanced sentiment analysis mapping
+            if (sentimentScore > 3) detectedMood = "Excited";
+            else if (sentimentScore > 1.5) detectedMood = "Happy";
+            else if (sentimentScore > 0.5) detectedMood = "Calm";
+            else if (sentimentScore < -3) detectedMood = "Angry";
+            else if (sentimentScore < -1.5) detectedMood = "Anxious";
+            else if (sentimentScore < -0.5) detectedMood = "Sad";
+            // Neutral remains the default
 
             setMood(detectedMood);
         } catch (error) {
@@ -187,166 +176,211 @@ export default function AddJournal() {
     };
 
     return (
-        // Todo : Add the header// Todo : Add the header
-        <div className="container mt-5">
-            <div className="card shadow-sm p-4">
-                <h2 className="mb-4">Add New Journal</h2>
+        <CContainer fluid className="min-vh-100 d-flex flex-column">
+            <h1 className="mb-4">Your Journals</h1>
+            <CCard className="mb-4">
 
-                {actionData?.error && (
-                    <div className="alert alert-danger">{actionData.error}</div>
-                )}
+                <CCardBody>
+                    <div className="c-app c-default-layout">
+                        <div className="c-wrapper">
+                            <main className="c-main">
+                                <div className="container-fluid">
+                                    <div className="fade-in">
+                                        <div className="row justify-content-center">
+                                            <div className="col-md-10">
+                                                <div className="card">
+                                                    <div className="card-header">
+                                                        <h5>Add New Journal Entry</h5>
+                                                    </div>
+                                                    <div className="card-body">
+                                                        {actionData?.error && (
+                                                            <div className="alert alert-danger">
+                                                                {actionData.error}
+                                                            </div>
+                                                        )}
 
-                <Form method="post" className="needs-validation" noValidate>
-                    <div className="mb-3">
-                        <label htmlFor="title" className="form-label">Title</label>
-                        <input
-                            type="text"
-                            name="title"
-                            id="title"
-                            className="form-control"
-                            required
-                            minLength={3}
-                        />
-                        <div className="invalid-feedback">
-                            Please provide a title (at least 3 characters)
+                                                        <Form method="post">
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="title"
+                                                                           className="form-label">Title</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="title"
+                                                                        id="title"
+                                                                        className="form-control"
+                                                                        required
+                                                                        minLength={3}
+                                                                    />
+                                                                    <div className="invalid-feedback">
+                                                                        Please provide a title (at least 3 characters)
+                                                                    </div>
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="date"
+                                                                           className="form-label">Date</label>
+                                                                    <input
+                                                                        type="date"
+                                                                        name="date"
+                                                                        id="date"
+                                                                        className="form-control"
+                                                                        required
+                                                                        defaultValue={new Date().toISOString().split('T')[0]}
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-12">
+                                                                    <label htmlFor="content"
+                                                                           className="form-label">Content</label>
+                                                                    <textarea
+                                                                        name="content"
+                                                                        id="content"
+                                                                        rows={5}
+                                                                        className="form-control"
+                                                                        required
+                                                                        minLength={10}
+                                                                        onChange={handleContentBlur}
+                                                                        onBlur={handleContentBlur}
+                                                                    ></textarea>
+                                                                    <div className="invalid-feedback">
+                                                                        Please write your journal content (at least 10
+                                                                        characters)
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6 position-relative">
+                                                                    <label htmlFor="category"
+                                                                           className="form-label">Category</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="category"
+                                                                        id="category"
+                                                                        className="form-control"
+                                                                        value={categoryInput}
+                                                                        onChange={handleCategoryChange}
+                                                                        required
+                                                                        autoComplete="off"
+                                                                    />
+                                                                    {suggestions.length > 0 && (
+                                                                        <div className="dropdown-menu show w-100">
+                                                                            {suggestions.map((suggestion, index) => (
+                                                                                <button
+                                                                                    key={index}
+                                                                                    className="dropdown-item"
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setCategoryInput(suggestion);
+                                                                                        setSuggestions([]);
+                                                                                    }}
+                                                                                >
+                                                                                    {suggestion}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="manualMood" className="form-label">
+                                                                        Mood (Detected: {mood})
+                                                                    </label>
+                                                                    <select
+                                                                        name="manualMood"
+                                                                        id="manualMood"
+                                                                        className="form-select"
+                                                                        defaultValue={mood}
+                                                                        value={mood}
+                                                                        readonly
+                                                                    >
+                                                                        <option value="Happy">Happy</option>
+                                                                        <option value="Sad">Sad</option>
+                                                                        <option value="Neutral">Neutral</option>
+                                                                        <option value="Excited">Excited</option>
+                                                                        <option value="Angry">Angry</option>
+                                                                        <option value="Anxious">Anxious</option>
+                                                                        <option value="Calm">Calm</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6 position-relative">
+                                                                    <label htmlFor="tags" className="form-label">
+                                                                        Tags (comma separated)
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="tags"
+                                                                        id="tags"
+                                                                        className="form-control"
+                                                                        value={tags}
+                                                                        onChange={handleTagsChange}
+                                                                        placeholder="e.g. work, personal, goals"
+                                                                    />
+                                                                    {tagSuggestions.length > 0 && (
+                                                                        <div className="dropdown-menu show w-100">
+                                                                            {tagSuggestions.map((tag, index) => (
+                                                                                <button
+                                                                                    key={index}
+                                                                                    className="dropdown-item"
+                                                                                    type="button"
+                                                                                    onClick={() => addTagSuggestion(tag)}
+                                                                                >
+                                                                                    {tag}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="image" className="form-label">
+                                                                        Image URL (Optional)
+                                                                    </label>
+                                                                    <input
+                                                                        type="url"
+                                                                        name="image"
+                                                                        id="image"
+                                                                        className="form-control"
+                                                                        placeholder="https://example.com/image.jpg"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="row mt-4">
+                                                                <div className="col-md-12 text-end">
+                                                                    <button
+                                                                        type="submit"
+                                                                        className="btn btn-primary px-4"
+                                                                        disabled={navigation.state === "submitting"}
+                                                                    >
+                                                                        {navigation.state === "submitting" ? (
+                                                                            <>
+                                                                    <span
+                                                                        className="spinner-border spinner-border-sm me-2"
+                                                                        role="status" aria-hidden="true"></span>
+                                                                                Saving...
+                                                                            </>
+                                                                        ) : "Add Journal"}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </Form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </main>
                         </div>
                     </div>
+                </CCardBody>
+            </CCard>
+        </CContainer>
 
-                    <div className="mb-3">
-                        <label htmlFor="content" className="form-label">Content</label>
-                        <textarea
-                            name="content"
-                            id="content"
-                            rows={5}
-                            className="form-control"
-                            required
-                            minLength={10}
-                            onChange={handleContentBlur}
-                            onBlur={handleContentBlur}
-                        ></textarea>
-                        <div className="invalid-feedback">
-                            Please write your journal content (at least 10 characters)
-                        </div>
-                    </div>
 
-                    <div className="mb-3 position-relative">
-                        <label htmlFor="category" className="form-label">Category</label>
-                        <input
-                            type="text"
-                            name="category"
-                            id="category"
-                            className="form-control"
-                            value={categoryInput}
-                            onChange={handleCategoryChange}
-                            required
-                            autoComplete="off"
-                        />
-                        {suggestions.length > 0 && (
-                            <ul className="list-group position-absolute w-100 z-1">
-                                {suggestions.map((suggestion, index) => (
-                                    <li
-                                        key={index}
-                                        className="list-group-item list-group-item-action cursor-pointer"
-                                        onClick={() => {
-                                            setCategoryInput(suggestion);
-                                            setSuggestions([]);
-                                        }}
-                                    >
-                                        {suggestion}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-
-                    <div className="mb-3 position-relative">
-                        <label htmlFor="tags" className="form-label">
-                            Tags (comma separated)
-                        </label>
-                        <input
-                            type="text"
-                            name="tags"
-                            id="tags"
-                            className="form-control"
-                            value={tags}
-                            onChange={handleTagsChange}
-                            placeholder="e.g. work, personal, goals"
-                        />
-                        {tagSuggestions.length > 0 && (
-                            <ul className="list-group position-absolute w-100 z-1">
-                                {tagSuggestions.map((tag, index) => (
-                                    <li
-                                        key={index}
-                                        className="list-group-item list-group-item-action cursor-pointer"
-                                        onClick={() => addTagSuggestion(tag)}
-                                    >
-                                        {tag}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-
-                    <div className="mb-3">
-                        <label htmlFor="image" className="form-label">
-                            Image URL (Optional)
-                        </label>
-                        <input
-                            type="url"
-                            name="image"
-                            id="image"
-                            className="form-control"
-                            placeholder="https://example.com/image.jpg"
-                        />
-                    </div>
-
-                    <div className="mb-3">
-                        <label htmlFor="date" className="form-label">Date</label>
-                        <input
-                            type="date"
-                            name="date"
-                            id="date"
-                            className="form-control"
-                            required
-                            defaultValue={new Date().toISOString().split('T')[0]}
-                        />
-                    </div>
-
-                    <div className="mb-3">
-                        <label htmlFor="manualMood" className="form-label">
-                            Mood (Detected: {mood})
-                        </label>
-                        <select
-                            name="manualMood"
-                            id="manualMood"
-                            className="form-select"
-                            defaultValue={mood}
-                        >
-                            <option value="Happy">Happy</option>
-                            <option value="Sad">Sad</option>
-                            <option value="Neutral">Neutral</option>
-                            <option value="Excited">Excited</option>
-                            <option value="Angry">Angry</option>
-                            <option value="Anxious">Anxious</option>
-                            <option value="Calm">Calm</option>
-                        </select>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={navigation.state === "submitting"}
-                    >
-                        {navigation.state === "submitting" ? (
-                            <>
-                                <span className="spinner-border spinner-border-sm me-2"
-                                      role="status" aria-hidden="true"></span>
-                                Saving...
-                            </>
-                        ) : "Add Journal"}
-                    </button>
-                </Form>
-            </div>
-        </div>
     );
 }
