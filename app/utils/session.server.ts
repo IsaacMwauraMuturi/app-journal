@@ -1,5 +1,7 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import {PrismaClient} from "@prisma/client";
 
+const prisma = new PrismaClient();
 // Create a cookie session storage instance
 const sessionSecret = process.env.SESSION_SECRET || "your-secret-key";
 const storage = createCookieSessionStorage({
@@ -22,6 +24,19 @@ export async function getSession(request: Request) {
     return storage.getSession(cookie);
 }
 
+export async function requireAdminSession(request: Request) {
+    const userId = await requireUserSession(request);
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true }
+    });
+
+    if (!user || user.role.name !== 'Admin') {
+        throw new Response("Unauthorized", { status: 401 });
+    }
+
+    return userId;
+}
 // Set a session
 export async function setSession(request: Request, userId: string) {
     const session = await getSession(request);

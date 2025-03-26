@@ -4,9 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="UI/UX design and improvements&#10;journal.add.tsx">
+    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="UI/UX design and improvements&#10;journal.$journalId.edit.tsx">
+      <change afterPath="$PROJECT_DIR$/app/routes/admin.users.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/viewprofile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/viewprofile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/utils/session.server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/utils/session.server.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +74,7 @@
       <updated>1742514031556</updated>
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
-      <workItem from="1742842311512" duration="41547000" />
+      <workItem from="1742842311512" duration="44511000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -176,7 +180,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742944676238</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="UI/UX design and improvements&#10;journal.$journalId.edit.tsx">
+      <option name="closed" value="true" />
+      <created>1742947383178</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1742947383178</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -210,6 +222,7 @@
     <MESSAGE value="UI/UX design and improvements&#10;dashboard.tsx&#10;Footer.tsx&#10;journal.$journalId.view.tsx&#10;journals.tsx&#10;login.tsx&#10;register.tsx&#10;root.tsx" />
     <MESSAGE value="UI/UX design and improvements&#10;profile.edit.tsx&#10;viewprofile.tsx&#10;workspace.xml" />
     <MESSAGE value="UI/UX design and improvements&#10;journal.add.tsx" />
-    <option name="LAST_COMMIT_MESSAGE" value="UI/UX design and improvements&#10;journal.add.tsx" />
+    <MESSAGE value="UI/UX design and improvements&#10;journal.$journalId.edit.tsx" />
+    <option name="LAST_COMMIT_MESSAGE" value="UI/UX design and improvements&#10;journal.$journalId.edit.tsx" />
   </component>
 </project>

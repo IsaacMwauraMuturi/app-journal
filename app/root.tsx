@@ -24,21 +24,51 @@ import Navbar from "~/components/Navbar";
 
 const prisma = new PrismaClient();
 
-// **Loader to fetch user data**
 export const loader: LoaderFunction = async ({ request }) => {
     try {
         const userId = await requireUserSession(request);
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, name: true, email: true },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            },
         });
 
-        return json({ user: user || null });
+        // Transform the data to make it easier to use in components
+        const userWithRole = user ? {
+            ...user,
+            role: user.role.name // Flatten the role to just the name
+        } : null;
+
+        return json({ user: userWithRole });
     } catch (error) {
         return json({ user: null });
     }
 };
+// **Loader to fetch user data**
+// export const loader: LoaderFunction = async ({ request }) => {
+//     try {
+//         const userId = await requireUserSession(request);
+//
+//         const user = await prisma.user.findUnique({
+//             where: { id: userId },
+//             select: { id: true, name: true, email: true },
+//         });
+//
+//         return json({ user: user || null });
+//     } catch (error) {
+//         return json({ user: null });
+//     }
+// };
 
 // Define links for stylesheets and fonts
 export const links: LinksFunction = () => [

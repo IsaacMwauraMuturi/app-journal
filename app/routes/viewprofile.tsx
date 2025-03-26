@@ -67,7 +67,7 @@ export default function ProfilePage() {
                                                 <h5 className="mb-1">{journal.title}</h5>
                                                 <small className="text-muted">Created: {new Date(journal.date).toLocaleDateString()}</small>
                                             </div>
-                                            <CButton color="primary" href={`/journals/${journal.id}`}>View</CButton>
+                                            <CButton color="primary" href={`/journal/${journal.id}/view`}>View</CButton>
                                         </CListGroupItem>
                                     ))}
                                 </CListGroup>
