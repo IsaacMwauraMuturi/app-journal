@@ -3,7 +3,8 @@ import { Form, useLoaderData, useNavigation, useActionData } from "@remix-run/re
 import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
 import { PrismaClient } from "@prisma/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { CCard, CCardBody, CCardHeader, CContainer } from "@coreui/react";
 
 const prisma = new PrismaClient();
 
@@ -31,15 +32,37 @@ export async function loader({ request, params }) {
 
     const categories = await prisma.journalCategory.findMany();
 
+    // Get all journals to extract tags
+    const allJournals = await prisma.journal.findMany({
+        where: { userId },
+    });
+
+    const existingTags = Array.from(
+        new Set(
+            allJournals
+                .filter(j => j.tags)
+                .flatMap(j => {
+                    try {
+                        return typeof j.tags === 'string' ? JSON.parse(j.tags) : j.tags;
+                    } catch {
+                        return [];
+                    }
+                })
+                .filter(tag => tag)
+        )
+    );
+
     // Parse tags if they exist
     const tags = journal.tags ? JSON.parse(JSON.stringify(journal.tags)).join(', ') : '';
 
     return json({
         journal: {
             ...journal,
-            tags
+            tags,
+            date: new Date(journal.date).toISOString().split('T')[0]
         },
-        categories
+        categories,
+        existingTags
     });
 }
 
@@ -50,13 +73,13 @@ export async function action({ request, params }) {
 
     const title = formData.get("title")?.toString().trim();
     const content = formData.get("content")?.toString().trim();
-    const image = formData.get("image")?.toString().trim() || null;
+    const image = formData.get("image")?.toString().trim() || "";
     const date = formData.get("date");
-    const categoryId = formData.get("categoryId")?.toString().trim();
+    const categoryInput = formData.get("category")?.toString().trim();
     const tagsInput = formData.get("tags")?.toString().trim();
-    const mood = formData.get("mood")?.toString().trim();
+    const mood = formData.get("manualMood")?.toString().trim();
 
-    if (!title || !content || !date || !categoryId) {
+    if (!title || !content || !date || !categoryInput) {
         return json({ error: "Title, content, date and category are required" }, { status: 400 });
     }
 
@@ -65,6 +88,21 @@ export async function action({ request, params }) {
         const tags = tagsInput
             ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
             : null;
+
+        // Find or create category
+        let category = await prisma.journalCategory.findFirst({
+            where: { title: categoryInput },
+        });
+
+        if (!category) {
+            category = await prisma.journalCategory.create({
+                data: {
+                    title: categoryInput,
+                    description: `Auto-generated category for ${categoryInput}`,
+                    image: "",
+                },
+            });
+        }
 
         await prisma.journal.update({
             where: {
@@ -75,14 +113,14 @@ export async function action({ request, params }) {
                 title,
                 content,
                 date: new Date(date),
-                categoryId: parseInt(categoryId),
-                image,
-                mood,
-                tags: tags ? JSON.parse(JSON.stringify(tags)) : null
+                categoryId: category.id,
+                image: image || undefined,
+                mood: mood || undefined,
+                tags: tags ? JSON.parse(JSON.stringify(tags)) : undefined
             }
         });
 
-        return redirect(`/journals/${journalId}`);
+        return redirect(`/journal/${journalId}/view`);
     } catch (error) {
         console.error("Journal update error:", error);
         return json({
@@ -92,186 +130,286 @@ export async function action({ request, params }) {
 }
 
 export default function EditJournal() {
-    const { journal, categories } = useLoaderData();
+    const { journal, categories, existingTags } = useLoaderData();
     const actionData = useActionData();
     const navigation = useNavigation();
-    const isSubmitting = navigation.state === "submitting";
 
-    const [tags, setTags] = useState(journal.tags || '');
+    const [categoryInput, setCategoryInput] = useState(journal.category.title);
+    const [suggestions, setSuggestions] = useState([]);
+    const [mood, setMood] = useState(journal.mood || "Neutral");
+    const [tags, setTags] = useState(journal.tags || "");
     const [tagSuggestions, setTagSuggestions] = useState([]);
 
-    // Extract all unique tags from user's journals for suggestions
-    useEffect(() => {
-        async function loadTagSuggestions() {
-            const response = await fetch('/api/user/tags');
-            if (response.ok) {
-                const data = await response.json();
-                setTagSuggestions(data.tags);
-            }
+    const handleContentBlur = async (event) => {
+        const content = event.target.value;
+        if (!content) return;
+
+        try {
+            const { default: compromise } = await import("compromise");
+            const Sentiment = (await import("sentiment")).default;
+
+            const sentiment = new Sentiment();
+            const sentimentScore = sentiment.analyze(content).score;
+
+            let detectedMood = "Neutral";
+
+            // Enhanced sentiment analysis mapping
+            if (sentimentScore > 3) detectedMood = "Excited";
+            else if (sentimentScore > 1.5) detectedMood = "Happy";
+            else if (sentimentScore > 0.5) detectedMood = "Calm";
+            else if (sentimentScore < -3) detectedMood = "Angry";
+            else if (sentimentScore < -1.5) detectedMood = "Anxious";
+            else if (sentimentScore < -0.5) detectedMood = "Sad";
+            // Neutral remains the default
+
+            setMood(detectedMood);
+        } catch (error) {
+            console.error("Sentiment analysis error:", error);
         }
-        loadTagSuggestions();
-    }, []);
+    };
+
+    const handleCategoryChange = useCallback((e) => {
+        const value = e.target.value;
+        setCategoryInput(value);
+
+        if (value.length > 0) {
+            const filtered = categories
+                .filter(cat => cat.title.toLowerCase().includes(value.toLowerCase()))
+                .map(cat => cat.title);
+            setSuggestions(filtered);
+        } else {
+            setSuggestions([]);
+        }
+    }, [categories]);
 
     const handleTagsChange = (e) => {
         const value = e.target.value;
         setTags(value);
+
+        if (value.includes(',')) {
+            setTagSuggestions([]);
+        } else if (value.length > 0) {
+            const filtered = existingTags
+                .filter(tag => tag.toLowerCase().includes(value.toLowerCase()));
+            setTagSuggestions(filtered);
+        } else {
+            setTagSuggestions([]);
+        }
+    };
+
+    const addTagSuggestion = (tag) => {
+        const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+        if (!currentTags.includes(tag)) {
+            setTags(currentTags.concat(tag).join(', '));
+        }
+        setTagSuggestions([]);
     };
 
     return (
-        // Todo : Add the header
-        <div className="max-w-4xl mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-6">Edit Journal</h1>
+        <CContainer fluid className="min-vh-100 d-flex flex-column">
+            <h1 className="mb-4">Edit Journal Entry</h1>
+            <CCard className="mb-4">
+                <CCardBody>
+                    <div className="c-app c-default-layout">
+                        <div className="c-wrapper">
+                            <main className="c-main">
+                                <div className="container-fluid">
+                                    <div className="fade-in">
+                                        <div className="row justify-content-center">
+                                            <div className="col-md-10">
+                                                <div className="card">
+                                                    <div className="card-header">
+                                                        <h5>Edit Journal Entry</h5>
+                                                    </div>
+                                                    <div className="card-body">
+                                                        {actionData?.error && (
+                                                            <div className="alert alert-danger">
+                                                                {actionData.error}
+                                                            </div>
+                                                        )}
 
-            {actionData?.error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {actionData.error}
-                </div>
-            )}
+                                                        <Form method="post">
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="title" className="form-label">Title</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="title"
+                                                                        id="title"
+                                                                        className="form-control"
+                                                                        defaultValue={journal.title}
+                                                                        required
+                                                                        minLength={3}
+                                                                    />
+                                                                    <div className="invalid-feedback">
+                                                                        Please provide a title (at least 3 characters)
+                                                                    </div>
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="date" className="form-label">Date</label>
+                                                                    <input
+                                                                        type="date"
+                                                                        name="date"
+                                                                        id="date"
+                                                                        className="form-control"
+                                                                        defaultValue={journal.date}
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                            </div>
 
-            <Form method="post" className="space-y-6">
-                <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                        Title
-                    </label>
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        defaultValue={journal.title}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                        required
-                    />
-                </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-12">
+                                                                    <label htmlFor="content" className="form-label">Content</label>
+                                                                    <textarea
+                                                                        name="content"
+                                                                        id="content"
+                                                                        rows={5}
+                                                                        className="form-control"
+                                                                        defaultValue={journal.content}
+                                                                        required
+                                                                        minLength={10}
+                                                                        onChange={handleContentBlur}
+                                                                        onBlur={handleContentBlur}
+                                                                    ></textarea>
+                                                                    <div className="invalid-feedback">
+                                                                        Please write your journal content (at least 10 characters)
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
-                <div>
-                    <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-                        Content
-                    </label>
-                    <textarea
-                        id="content"
-                        name="content"
-                        rows={8}
-                        defaultValue={journal.content}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                        required
-                    />
-                </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6 position-relative">
+                                                                    <label htmlFor="category" className="form-label">Category</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="category"
+                                                                        id="category"
+                                                                        className="form-control"
+                                                                        value={categoryInput}
+                                                                        onChange={handleCategoryChange}
+                                                                        required
+                                                                        autoComplete="off"
+                                                                    />
+                                                                    {suggestions.length > 0 && (
+                                                                        <div className="dropdown-menu show w-100">
+                                                                            {suggestions.map((suggestion, index) => (
+                                                                                <button
+                                                                                    key={index}
+                                                                                    className="dropdown-item"
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setCategoryInput(suggestion);
+                                                                                        setSuggestions([]);
+                                                                                    }}
+                                                                                >
+                                                                                    {suggestion}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="manualMood" className="form-label">
+                                                                        Mood (Detected: {mood})
+                                                                    </label>
+                                                                    <select
+                                                                        name="manualMood"
+                                                                        id="manualMood"
+                                                                        className="form-select"
+                                                                        value={mood}
+                                                                        onChange={(e) => setMood(e.target.value)}
+                                                                    >
+                                                                        <option value="Happy">Happy</option>
+                                                                        <option value="Sad">Sad</option>
+                                                                        <option value="Neutral">Neutral</option>
+                                                                        <option value="Excited">Excited</option>
+                                                                        <option value="Angry">Angry</option>
+                                                                        <option value="Anxious">Anxious</option>
+                                                                        <option value="Calm">Calm</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                            Date
-                        </label>
-                        <input
-                            type="date"
-                            id="date"
-                            name="date"
-                            defaultValue={new Date(journal.date).toISOString().split('T')[0]}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                            required
-                        />
-                    </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-md-6 position-relative">
+                                                                    <label htmlFor="tags" className="form-label">
+                                                                        Tags (comma separated)
+                                                                    </label>
+                                                                    <input
+                                                                        type="text"
+                                                                        name="tags"
+                                                                        id="tags"
+                                                                        className="form-control"
+                                                                        value={tags}
+                                                                        onChange={handleTagsChange}
+                                                                        placeholder="e.g. work, personal, goals"
+                                                                    />
+                                                                    {tagSuggestions.length > 0 && (
+                                                                        <div className="dropdown-menu show w-100">
+                                                                            {tagSuggestions.map((tag, index) => (
+                                                                                <button
+                                                                                    key={index}
+                                                                                    className="dropdown-item"
+                                                                                    type="button"
+                                                                                    onClick={() => addTagSuggestion(tag)}
+                                                                                >
+                                                                                    {tag}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="image" className="form-label">
+                                                                        Image URL (Optional)
+                                                                    </label>
+                                                                    <input
+                                                                        type="url"
+                                                                        name="image"
+                                                                        id="image"
+                                                                        className="form-control"
+                                                                        defaultValue={journal.image || ''}
+                                                                        placeholder="https://example.com/image.jpg"
+                                                                    />
+                                                                </div>
+                                                            </div>
 
-                    <div>
-                        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
-                            Category
-                        </label>
-                        <select
-                            id="categoryId"
-                            name="categoryId"
-                            defaultValue={journal.categoryId}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                            required
-                        >
-                            {categories.map(category => (
-                                <option key={category.id} value={category.id}>
-                                    {category.title}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label htmlFor="mood" className="block text-sm font-medium text-gray-700">
-                            Mood
-                        </label>
-                        <select
-                            id="mood"
-                            name="mood"
-                            defaultValue={journal.mood || 'Neutral'}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                        >
-                            <option value="Happy">Happy</option>
-                            <option value="Sad">Sad</option>
-                            <option value="Neutral">Neutral</option>
-                            <option value="Excited">Excited</option>
-                            <option value="Angry">Angry</option>
-                            <option value="Anxious">Anxious</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-                            Image URL (Optional)
-                        </label>
-                        <input
-                            type="url"
-                            id="image"
-                            name="image"
-                            defaultValue={journal.image || ''}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                            placeholder="https://example.com/image.jpg"
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
-                        Tags (comma separated)
-                    </label>
-                    <input
-                        type="text"
-                        id="tags"
-                        name="tags"
-                        value={tags}
-                        onChange={handleTagsChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                        placeholder="work, personal, goals"
-                    />
-                    {tagSuggestions.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {tagSuggestions.map((tag, index) => (
-                                <button
-                                    key={index}
-                                    type="button"
-                                    onClick={() => setTags(prev => prev ? `${prev}, ${tag}` : tag)}
-                                    className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
-                                >
-                                    {tag}
-                                </button>
-                            ))}
+                                                            <div className="row mt-4">
+                                                                <div className="col-md-12 text-end">
+                                                                    <a
+                                                                        href={`/journal/${journal.id}/view`}
+                                                                        className="btn btn-secondary me-2"
+                                                                    >
+                                                                        Cancel
+                                                                    </a>
+                                                                    <button
+                                                                        type="submit"
+                                                                        className="btn btn-primary px-4"
+                                                                        disabled={navigation.state === "submitting"}
+                                                                    >
+                                                                        {navigation.state === "submitting" ? (
+                                                                            <>
+                                                                                <span className="spinner-border spinner-border-sm me-2"
+                                                                                      role="status" aria-hidden="true"></span>
+                                                                                Saving...
+                                                                            </>
+                                                                        ) : "Save Changes"}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </Form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </main>
                         </div>
-                    )}
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                    <a
-                        href={`/journals/${journal.id}`}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                    >
-                        Cancel
-                    </a>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                    >
-                        {isSubmitting ? "Saving..." : "Save Changes"}
-                    </button>
-                </div>
-            </Form>
-        </div>
+                    </div>
+                </CCardBody>
+            </CCard>
+        </CContainer>
     );
 }
