@@ -4,8 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="UI/UX design and improvements&#10;journal.$journalId.edit.tsx">
-      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
+    <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Make the code maintainable and readability">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/context/UserContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/context/UserContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/utils/session.server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/utils/session.server.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +74,7 @@
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
       <workItem from="1742842311512" duration="46357000" />
-      <workItem from="1743028631931" duration="467000" />
+      <workItem from="1743028631931" duration="1164000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -208,7 +212,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743029082140</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Make the code maintainable and readability">
+      <option name="closed" value="true" />
+      <created>1743029174706</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1743029174706</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -243,6 +255,7 @@
     <MESSAGE value="UI/UX design and improvements&#10;profile.edit.tsx&#10;viewprofile.tsx&#10;workspace.xml" />
     <MESSAGE value="UI/UX design and improvements&#10;journal.add.tsx" />
     <MESSAGE value="UI/UX design and improvements&#10;journal.$journalId.edit.tsx" />
-    <option name="LAST_COMMIT_MESSAGE" value="UI/UX design and improvements&#10;journal.$journalId.edit.tsx" />
+    <MESSAGE value="Make the code maintainable and readability" />
+    <option name="LAST_COMMIT_MESSAGE" value="Make the code maintainable and readability" />
   </component>
 </project>

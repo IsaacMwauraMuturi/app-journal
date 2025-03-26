@@ -1,4 +1,3 @@
-// app/components/JournalEditForm.tsx
 import { useNavigate } from "@remix-run/react";
 // Todo : Customize to view
 export default function JournalEditForm({ entry, onSubmit }) {
