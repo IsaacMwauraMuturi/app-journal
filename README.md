@@ -114,7 +114,11 @@ View all journal entries analytics with:
    ```sh
    docker-compose up --build
    ```
-7. Open **Prisma Studio** to verify database tables:
+   Login to super admin using
+   email: admin@me.com
+   password: 12345
+
+8. Open **Prisma Studio** to verify database tables:
    ```sh
    npx prisma studio
    ```
