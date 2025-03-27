@@ -15,6 +15,8 @@ This full-stack application provides:
 - Secure user registration and login.
 - JWT-based authentication for session management.
 - Role-based access control for security.
+![img_4.png](img_4.png)
+![img_3.png](img_3.png)
 
 ### 2. Journal Entry Management
 - Create, edit, and delete journal entries.
