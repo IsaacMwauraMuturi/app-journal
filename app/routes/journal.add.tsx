@@ -3,34 +3,44 @@ import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
 import { useState, useEffect, useCallback } from "react";
 import { PrismaClient } from "@prisma/client";
-import {CCard, CCardBody, CCardHeader, CContainer} from "@coreui/react";
+import { CCard, CCardBody, CCardHeader, CContainer } from "@coreui/react";
 
+// Initialize Prisma client for database operations
 const prisma = new PrismaClient();
 
+/**
+ * Loader function that fetches data needed for the AddJournal component
+ */
 export async function loader({ request }) {
+    // Ensure user is authenticated
     const userId = await requireUserSession(request);
+
+    // Fetch all categories and user's journals
     const categories = await prisma.journalCategory.findMany();
     const userJournals = await prisma.journal.findMany({
         where: { userId },
         include: { category: true },
     });
 
+    // Fetch all journals to extract existing tags
     const allJournals = await prisma.journal.findMany({
         where: { userId },
     });
 
+    // Process and deduplicate tags from all journals
     const existingTags = Array.from(
         new Set(
             allJournals
                 .filter(j => j.tags)
                 .flatMap(j => {
                     try {
+                        // Handle both string and array tag formats
                         return typeof j.tags === 'string' ? JSON.parse(j.tags) : j.tags;
                     } catch {
                         return [];
                     }
                 })
-                .filter(tag => tag)
+                .filter(tag => tag) // Remove empty tags
         )
     );
 
@@ -42,10 +52,15 @@ export async function loader({ request }) {
     });
 }
 
+/**
+ * Action function that handles form submission for creating a new journal
+ */
 export async function action({ request }) {
+    // Ensure user is authenticated
     const userId = await requireUserSession(request);
     const formData = await request.formData();
 
+    // Extract form data
     const title = formData.get("title")?.toString().trim();
     let content = formData.get("content")?.toString().trim();
     const image = formData.get("image")?.toString().trim() || "";
@@ -54,19 +69,23 @@ export async function action({ request }) {
     const tagsInput = formData.get("tags")?.toString().trim();
     const mood = formData.get("manualMood")?.toString().trim();
 
+    // Validate required fields
     if (!title || !content || !date || !categoryInput) {
         return json({ error: "Title, content, date and category are required" }, { status: 400 });
     }
 
     try {
+        // Process tags into an array
         const tags = tagsInput
             ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
             : null;
 
+        // Find or create category
         let category = await prisma.journalCategory.findFirst({
             where: { title: categoryInput },
         });
 
+        // Create new category if it doesn't exist
         if (!category) {
             category = await prisma.journalCategory.create({
                 data: {
@@ -76,6 +95,8 @@ export async function action({ request }) {
                 },
             });
         }
+
+        // Create new journal entry
         await prisma.journal.create({
             data: {
                 title,
@@ -89,6 +110,7 @@ export async function action({ request }) {
             },
         });
 
+        // Redirect to dashboard after successful creation
         return redirect("/dashboard");
     } catch (error) {
         console.error("Journal creation error:", error);
@@ -98,39 +120,47 @@ export async function action({ request }) {
     }
 }
 
+/**
+ * AddJournal component - Form for creating new journal entries
+ */
 export default function AddJournal() {
+    // Load data and state from Remix hooks
     const { categories, existingTags } = useLoaderData();
     const actionData = useActionData();
     const navigation = useNavigation();
+    const { userJournals } = useLoaderData();
 
+    // Component state
     const [categoryInput, setCategoryInput] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [mood, setMood] = useState("Neutral");
     const [tags, setTags] = useState("");
     const [tagSuggestions, setTagSuggestions] = useState([]);
-    const { userJournals } = useLoaderData();
 
+    /**
+     * Analyze content sentiment to suggest mood when content loses focus
+     */
     const handleContentBlur = async (event) => {
         const content = event.target.value;
         if (!content) return;
 
         try {
+            // Dynamically import sentiment analysis libraries
             const { default: compromise } = await import("compromise");
             const Sentiment = (await import("sentiment")).default;
 
+            // Analyze sentiment score
             const sentiment = new Sentiment();
             const sentimentScore = sentiment.analyze(content).score;
 
+            // Map score to mood
             let detectedMood = "Neutral";
-
-            // Enhanced sentiment analysis mapping
             if (sentimentScore > 3) detectedMood = "Excited";
             else if (sentimentScore > 1.5) detectedMood = "Happy";
             else if (sentimentScore > 0.5) detectedMood = "Calm";
             else if (sentimentScore < -3) detectedMood = "Angry";
             else if (sentimentScore < -1.5) detectedMood = "Anxious";
             else if (sentimentScore < -0.5) detectedMood = "Sad";
-            // Neutral remains the default
 
             setMood(detectedMood);
         } catch (error) {
@@ -138,10 +168,14 @@ export default function AddJournal() {
         }
     };
 
+    /**
+     * Handle category input changes and show suggestions
+     */
     const handleCategoryChange = useCallback((e) => {
         const value = e.target.value;
         setCategoryInput(value);
 
+        // Show suggestions based on input
         if (value.length > 0) {
             const filtered = categories
                 .filter(cat => cat.title.toLowerCase().includes(value.toLowerCase()))
@@ -152,10 +186,14 @@ export default function AddJournal() {
         }
     }, [categories]);
 
+    /**
+     * Handle tags input changes and show suggestions
+     */
     const handleTagsChange = (e) => {
         const value = e.target.value;
         setTags(value);
 
+        // Show suggestions when not in the middle of typing a tag
         if (value.includes(',')) {
             setTagSuggestions([]);
         } else if (value.length > 0) {
@@ -167,6 +205,9 @@ export default function AddJournal() {
         }
     };
 
+    /**
+     * Add a suggested tag to the tags input
+     */
     const addTagSuggestion = (tag) => {
         const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
         if (!currentTags.includes(tag)) {
@@ -179,7 +220,6 @@ export default function AddJournal() {
         <CContainer fluid className="min-vh-100 d-flex flex-column">
             <h1 className="mb-4">Your Journals</h1>
             <CCard className="mb-4">
-
                 <CCardBody>
                     <div className="c-app c-default-layout">
                         <div className="c-wrapper">
@@ -193,6 +233,7 @@ export default function AddJournal() {
                                                         <h5>Add New Journal Entry</h5>
                                                     </div>
                                                     <div className="card-body">
+                                                        {/* Display form errors if any */}
                                                         {actionData?.error && (
                                                             <div className="alert alert-danger">
                                                                 {actionData.error}
@@ -200,10 +241,10 @@ export default function AddJournal() {
                                                         )}
 
                                                         <Form method="post">
+                                                            {/* Title and Date row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6">
-                                                                    <label htmlFor="title"
-                                                                           className="form-label">Title</label>
+                                                                    <label htmlFor="title" className="form-label">Title</label>
                                                                     <input
                                                                         type="text"
                                                                         name="title"
@@ -217,8 +258,7 @@ export default function AddJournal() {
                                                                     </div>
                                                                 </div>
                                                                 <div className="col-md-6">
-                                                                    <label htmlFor="date"
-                                                                           className="form-label">Date</label>
+                                                                    <label htmlFor="date" className="form-label">Date</label>
                                                                     <input
                                                                         type="date"
                                                                         name="date"
@@ -230,10 +270,10 @@ export default function AddJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Content textarea */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-12">
-                                                                    <label htmlFor="content"
-                                                                           className="form-label">Content</label>
+                                                                    <label htmlFor="content" className="form-label">Content</label>
                                                                     <textarea
                                                                         name="content"
                                                                         id="content"
@@ -245,16 +285,15 @@ export default function AddJournal() {
                                                                         onBlur={handleContentBlur}
                                                                     ></textarea>
                                                                     <div className="invalid-feedback">
-                                                                        Please write your journal content (at least 10
-                                                                        characters)
+                                                                        Please write your journal content (at least 10 characters)
                                                                     </div>
                                                                 </div>
                                                             </div>
 
+                                                            {/* Category and Mood row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6 position-relative">
-                                                                    <label htmlFor="category"
-                                                                           className="form-label">Category</label>
+                                                                    <label htmlFor="category" className="form-label">Category</label>
                                                                     <input
                                                                         type="text"
                                                                         name="category"
@@ -265,6 +304,7 @@ export default function AddJournal() {
                                                                         required
                                                                         autoComplete="off"
                                                                     />
+                                                                    {/* Category suggestions dropdown */}
                                                                     {suggestions.length > 0 && (
                                                                         <div className="dropdown-menu show w-100">
                                                                             {suggestions.map((suggestion, index) => (
@@ -306,6 +346,7 @@ export default function AddJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Tags and Image row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6 position-relative">
                                                                     <label htmlFor="tags" className="form-label">
@@ -320,6 +361,7 @@ export default function AddJournal() {
                                                                         onChange={handleTagsChange}
                                                                         placeholder="e.g. work, personal, goals"
                                                                     />
+                                                                    {/* Tag suggestions dropdown */}
                                                                     {tagSuggestions.length > 0 && (
                                                                         <div className="dropdown-menu show w-100">
                                                                             {tagSuggestions.map((tag, index) => (
@@ -349,6 +391,7 @@ export default function AddJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Form submission button */}
                                                             <div className="row mt-4">
                                                                 <div className="col-md-12 text-end">
                                                                     <button
@@ -358,9 +401,8 @@ export default function AddJournal() {
                                                                     >
                                                                         {navigation.state === "submitting" ? (
                                                                             <>
-                                                                    <span
-                                                                        className="spinner-border spinner-border-sm me-2"
-                                                                        role="status" aria-hidden="true"></span>
+                                                                                <span className="spinner-border spinner-border-sm me-2"
+                                                                                      role="status" aria-hidden="true"></span>
                                                                                 Saving...
                                                                             </>
                                                                         ) : "Add Journal"}
@@ -380,7 +422,5 @@ export default function AddJournal() {
                 </CCardBody>
             </CCard>
         </CContainer>
-
-
     );
 }

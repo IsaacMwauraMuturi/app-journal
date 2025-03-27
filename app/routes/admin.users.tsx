@@ -2,31 +2,45 @@ import { json, LoaderFunction } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
 import { requireUserSession } from "~/utils/session.server";
 import { PrismaClient } from "@prisma/client";
-import { CContainer, CCard, CCardHeader, CCardBody, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CBadge, CButton } from "@coreui/react";
+import {
+    CContainer,
+    CCard,
+    CCardHeader,
+    CCardBody,
+    CTable,
+    CTableHead,
+    CTableRow,
+    CTableHeaderCell,
+    CTableBody,
+    CTableDataCell,
+    CBadge,
+    CButton
+} from "@coreui/react";
 
 const prisma = new PrismaClient();
 
 export const loader: LoaderFunction = async ({ request }) => {
-    // Require admin role
+    // Require user session and fetch user ID
     const userId = await requireUserSession(request);
 
-    // Check if user is admin
+    // Fetch user details along with role
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { role: true }
     });
 
+    // Restrict access to admin users only
     if (!user || user.role.name !== 'Admin') {
         throw new Response("Unauthorized", { status: 401 });
     }
 
-    // Get pagination parameters
+    // Get pagination parameters from URL
     const url = new URL(request.url);
     const page = Number(url.searchParams.get('page')) || 1;
     const perPage = 10;
     const skip = (page - 1) * perPage;
 
-    // Get users with pagination
+    // Fetch paginated list of users
     const [users, totalUsers] = await Promise.all([
         prisma.user.findMany({
             skip,
@@ -53,7 +67,6 @@ export const loader: LoaderFunction = async ({ request }) => {
         users: users.map(user => ({
             ...user,
             role: user.role.name,
-            // createdAt: user.createdAt.toISOString().split('T')[0]
         })),
         currentPage: page,
         totalPages: Math.ceil(totalUsers / perPage)
@@ -73,6 +86,7 @@ export default function UsersAdmin() {
                     </Link>
                 </CCardHeader>
                 <CCardBody>
+                    {/* User Table */}
                     <CTable striped hover responsive>
                         <CTableHead>
                             <CTableRow>

@@ -14,15 +14,17 @@ export async function action({ request }: ActionFunctionArgs) {
         const formData = await request.json();
         const { email, password } = formData;
 
-        // Input validation
+        // Validate input fields
         if (!email || !password) {
             return json({ error: "Email and password are required" }, { status: 400 });
         }
 
+        // Check if the provided email has a valid format
         if (!validator.isEmail(email)) {
             return json({ error: "Invalid email format" }, { status: 400 });
         }
 
+        // Sanitize user input
         const sanitizedEmail = validator.normalizeEmail(email);
         const sanitizedPassword = password.trim();
 
@@ -33,31 +35,40 @@ export async function action({ request }: ActionFunctionArgs) {
             },
         });
 
+        // Return error if the user does not exist
         if (!user) {
             return json({ error: "Invalid credentials" }, { status: 400 });
         }
 
-        // Compare password with stored hash
+        // Compare the provided password with the stored hash
         const isPasswordValid = await bcrypt.compare(sanitizedPassword, user.password);
 
+        // Return error if the password is incorrect
         if (!isPasswordValid) {
             return json({ error: "Invalid credentials" }, { status: 400 });
         }
 
-        // Set session data for the user (userId and email)
+        // Set session data for the authenticated user
         const session = await setSession(request, user.id, user.email);
 
-        // Return success message and set session cookie
-        return json({ message: "Login successful" }, {
-            status: 200,
-            headers: {
-                "Set-Cookie": session, // Set the session cookie
-            },
-        });
+        // Return success response with session cookie
+        return json(
+            { message: "Login successful" },
+            {
+                status: 200,
+                headers: {
+                    "Set-Cookie": session, // Attach session cookie to the response
+                },
+            }
+        );
     } catch (error) {
         console.error("Error during login:", error);
-        return json({ error: "An error occurred during login. Please try again later." }, { status: 500 });
+        return json(
+            { error: "An error occurred during login. Please try again later." },
+            { status: 500 }
+        );
     } finally {
+        // Disconnect from the database to free up resources
         await prisma.$disconnect();
     }
 }

@@ -1,4 +1,3 @@
-// app/routes/api.entries.add.ts
 import { json } from "@remix-run/node";
 import { PrismaClient } from "@prisma/client";
 import { requireUserSession } from "~/utils/session.server";

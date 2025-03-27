@@ -1,4 +1,3 @@
-// app/routes/journals.$journalId.edit.tsx
 import { Form, useLoaderData, useNavigation, useActionData } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import { requireUserSession } from "~/utils/session.server";
@@ -6,16 +5,23 @@ import { PrismaClient } from "@prisma/client";
 import { useState, useEffect, useCallback } from "react";
 import { CCard, CCardBody, CCardHeader, CContainer } from "@coreui/react";
 
+// Initialize Prisma client
 const prisma = new PrismaClient();
 
+/**
+ * Loader function that fetches journal entry data for editing
+ */
 export async function loader({ request, params }) {
+    // Ensure user is authenticated
     const userId = await requireUserSession(request);
     const journalId = parseInt(params.journalId);
 
+    // Validate journal ID
     if (isNaN(journalId)) {
         throw new Response("Invalid journal ID", { status: 400 });
     }
 
+    // Fetch the specific journal entry with category
     const journal = await prisma.journal.findUnique({
         where: {
             id: journalId,
@@ -26,17 +32,20 @@ export async function loader({ request, params }) {
         }
     });
 
+    // Handle journal not found
     if (!journal) {
         throw new Response("Journal not found", { status: 404 });
     }
 
+    // Get all categories for suggestions
     const categories = await prisma.journalCategory.findMany();
 
-    // Get all journals to extract tags
+    // Get all user's journals to extract existing tags
     const allJournals = await prisma.journal.findMany({
         where: { userId },
     });
 
+    // Extract and deduplicate tags from all journals
     const existingTags = Array.from(
         new Set(
             allJournals
@@ -52,25 +61,30 @@ export async function loader({ request, params }) {
         )
     );
 
-    // Parse tags if they exist
+    // Parse tags for the current journal
     const tags = journal.tags ? JSON.parse(JSON.stringify(journal.tags)).join(', ') : '';
 
     return json({
         journal: {
             ...journal,
             tags,
-            date: new Date(journal.date).toISOString().split('T')[0]
+            date: new Date(journal.date).toISOString().split('T')[0] // Format date for input
         },
         categories,
         existingTags
     });
 }
 
+/**
+ * Action function that handles form submission for editing a journal
+ */
 export async function action({ request, params }) {
+    // Ensure user is authenticated
     const userId = await requireUserSession(request);
     const journalId = parseInt(params.journalId);
     const formData = await request.formData();
 
+    // Extract form data
     const title = formData.get("title")?.toString().trim();
     const content = formData.get("content")?.toString().trim();
     const image = formData.get("image")?.toString().trim() || "";
@@ -79,6 +93,7 @@ export async function action({ request, params }) {
     const tagsInput = formData.get("tags")?.toString().trim();
     const mood = formData.get("manualMood")?.toString().trim();
 
+    // Validate required fields
     if (!title || !content || !date || !categoryInput) {
         return json({ error: "Title, content, date and category are required" }, { status: 400 });
     }
@@ -94,6 +109,7 @@ export async function action({ request, params }) {
             where: { title: categoryInput },
         });
 
+        // Create new category if it doesn't exist
         if (!category) {
             category = await prisma.journalCategory.create({
                 data: {
@@ -104,10 +120,11 @@ export async function action({ request, params }) {
             });
         }
 
+        // Update the journal entry
         await prisma.journal.update({
             where: {
                 id: journalId,
-                userId: userId // Ensure user can only edit their own journals
+                userId: userId // Security check to ensure user owns this journal
             },
             data: {
                 title,
@@ -120,6 +137,7 @@ export async function action({ request, params }) {
             }
         });
 
+        // Redirect to view page after successful update
         return redirect(`/journal/${journalId}/view`);
     } catch (error) {
         console.error("Journal update error:", error);
@@ -129,38 +147,46 @@ export async function action({ request, params }) {
     }
 }
 
+/**
+ * EditJournal component - Form for editing an existing journal entry
+ */
 export default function EditJournal() {
+    // Load data from loader and potential action errors
     const { journal, categories, existingTags } = useLoaderData();
     const actionData = useActionData();
     const navigation = useNavigation();
 
+    // State for form inputs
     const [categoryInput, setCategoryInput] = useState(journal.category.title);
     const [suggestions, setSuggestions] = useState([]);
     const [mood, setMood] = useState(journal.mood || "Neutral");
     const [tags, setTags] = useState(journal.tags || "");
     const [tagSuggestions, setTagSuggestions] = useState([]);
 
+    /**
+     * Analyze content sentiment to suggest mood when content loses focus
+     */
     const handleContentBlur = async (event) => {
         const content = event.target.value;
         if (!content) return;
 
         try {
+            // Dynamically import sentiment analysis libraries
             const { default: compromise } = await import("compromise");
             const Sentiment = (await import("sentiment")).default;
 
+            // Analyze sentiment score
             const sentiment = new Sentiment();
             const sentimentScore = sentiment.analyze(content).score;
 
+            // Map score to mood
             let detectedMood = "Neutral";
-
-            // Enhanced sentiment analysis mapping
             if (sentimentScore > 3) detectedMood = "Excited";
             else if (sentimentScore > 1.5) detectedMood = "Happy";
             else if (sentimentScore > 0.5) detectedMood = "Calm";
             else if (sentimentScore < -3) detectedMood = "Angry";
             else if (sentimentScore < -1.5) detectedMood = "Anxious";
             else if (sentimentScore < -0.5) detectedMood = "Sad";
-            // Neutral remains the default
 
             setMood(detectedMood);
         } catch (error) {
@@ -168,10 +194,14 @@ export default function EditJournal() {
         }
     };
 
+    /**
+     * Handle category input changes and show suggestions
+     */
     const handleCategoryChange = useCallback((e) => {
         const value = e.target.value;
         setCategoryInput(value);
 
+        // Show suggestions based on input
         if (value.length > 0) {
             const filtered = categories
                 .filter(cat => cat.title.toLowerCase().includes(value.toLowerCase()))
@@ -182,10 +212,14 @@ export default function EditJournal() {
         }
     }, [categories]);
 
+    /**
+     * Handle tags input changes and show suggestions
+     */
     const handleTagsChange = (e) => {
         const value = e.target.value;
         setTags(value);
 
+        // Show suggestions when not in the middle of typing a tag
         if (value.includes(',')) {
             setTagSuggestions([]);
         } else if (value.length > 0) {
@@ -197,6 +231,9 @@ export default function EditJournal() {
         }
     };
 
+    /**
+     * Add a suggested tag to the tags input
+     */
     const addTagSuggestion = (tag) => {
         const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
         if (!currentTags.includes(tag)) {
@@ -222,6 +259,7 @@ export default function EditJournal() {
                                                         <h5>Edit Journal Entry</h5>
                                                     </div>
                                                     <div className="card-body">
+                                                        {/* Display any form errors */}
                                                         {actionData?.error && (
                                                             <div className="alert alert-danger">
                                                                 {actionData.error}
@@ -229,6 +267,7 @@ export default function EditJournal() {
                                                         )}
 
                                                         <Form method="post">
+                                                            {/* Title and Date row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6">
                                                                     <label htmlFor="title" className="form-label">Title</label>
@@ -258,6 +297,7 @@ export default function EditJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Content textarea */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-12">
                                                                     <label htmlFor="content" className="form-label">Content</label>
@@ -278,6 +318,7 @@ export default function EditJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Category and Mood row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6 position-relative">
                                                                     <label htmlFor="category" className="form-label">Category</label>
@@ -291,6 +332,7 @@ export default function EditJournal() {
                                                                         required
                                                                         autoComplete="off"
                                                                     />
+                                                                    {/* Category suggestions dropdown */}
                                                                     {suggestions.length > 0 && (
                                                                         <div className="dropdown-menu show w-100">
                                                                             {suggestions.map((suggestion, index) => (
@@ -331,6 +373,7 @@ export default function EditJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Tags and Image row */}
                                                             <div className="row mb-3">
                                                                 <div className="col-md-6 position-relative">
                                                                     <label htmlFor="tags" className="form-label">
@@ -345,6 +388,7 @@ export default function EditJournal() {
                                                                         onChange={handleTagsChange}
                                                                         placeholder="e.g. work, personal, goals"
                                                                     />
+                                                                    {/* Tag suggestions dropdown */}
                                                                     {tagSuggestions.length > 0 && (
                                                                         <div className="dropdown-menu show w-100">
                                                                             {tagSuggestions.map((tag, index) => (
@@ -375,6 +419,7 @@ export default function EditJournal() {
                                                                 </div>
                                                             </div>
 
+                                                            {/* Form actions */}
                                                             <div className="row mt-4">
                                                                 <div className="col-md-12 text-end">
                                                                     <a

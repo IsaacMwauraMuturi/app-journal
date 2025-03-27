@@ -6,10 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Make the code maintainable and readability">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/JournalEditForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Navbar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/context/UserContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/context/UserContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/utils/session.server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/utils/session.server.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/_index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/_index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/admin.users.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/admin.users.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/api.auth.login.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/api.auth.login.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/api.entries.$id.show.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/api.entries.$id.show.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/api.entries.add.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/api.entries.add.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/api.journals.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/api.journals.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/api.user.tags.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/api.user.tags.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journal.$journalId.delete.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.delete.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.edit.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.$journalId.view.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journal.add.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journal.add.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes/journals.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/journals.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +84,7 @@
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
       <workItem from="1742842311512" duration="46357000" />
-      <workItem from="1743028631931" duration="1164000" />
+      <workItem from="1743028631931" duration="5402000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -220,7 +230,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743029174706</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Make the code maintainable and readability">
+      <option name="closed" value="true" />
+      <created>1743029834650</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1743029834650</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

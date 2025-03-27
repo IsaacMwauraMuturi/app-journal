@@ -12,10 +12,16 @@ import "chart.js/auto";
 import { FaPlus } from "react-icons/fa";
 import { useEffect, useRef, useState } from "react";
 
+// Initialize Prisma client and calendar localizer
 const prisma = new PrismaClient();
 const localizer = momentLocalizer(moment);
 
+/**
+ * Loader function that fetches journal entries for the current user
+ * with optional date range filtering
+ */
 export let loader: LoaderFunction = async ({ request }) => {
+    // Ensure user is authenticated
     const userId = await requireUserSession(request);
     const url = new URL(request.url);
 
@@ -23,6 +29,7 @@ export let loader: LoaderFunction = async ({ request }) => {
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
 
+    // Fetch journal entries with optional date filtering
     const entries = await prisma.journal.findMany({
         where: {
             userId,
@@ -35,20 +42,28 @@ export let loader: LoaderFunction = async ({ request }) => {
         orderBy: { date: "desc" },
         take: 100,
     });
+
     return json({ entries });
 };
 
+/**
+ * Dashboard component displaying various analytics and visualizations
+ * of journal entries
+ */
 export default function Dashboard() {
+    // Data and state management
     const { entries } = useLoaderData();
     const fetcher = useFetcher();
     const canvasRef = useRef(null);
     const [wordCloudReady, setWordCloudReady] = useState(false);
+
+    // Default date range: last month to today
     const [dateRange, setDateRange] = useState({
         startDate: moment().subtract(1, 'month').format('YYYY-MM-DD'),
         endDate: moment().format('YYYY-MM-DD')
     });
 
-    // Handle date range changes
+    // Handle date range input changes
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setDateRange(prev => ({
@@ -57,12 +72,12 @@ export default function Dashboard() {
         }));
     };
 
-    // Apply date filter
+    // Apply date filter by reloading data with new date range
     const applyDateFilter = () => {
         fetcher.load(`/dashboard?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
     };
 
-    // Reset date filter
+    // Reset date filter to default values
     const resetDateFilter = () => {
         setDateRange({
             startDate: moment().subtract(1, 'month').format('YYYY-MM-DD'),
@@ -74,7 +89,7 @@ export default function Dashboard() {
     // Use fetcher data if available, otherwise use loader data
     const displayEntries = fetcher.data?.entries || entries;
 
-    // Chart configuration
+    // Common chart configuration options
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -85,20 +100,24 @@ export default function Dashboard() {
         },
     };
 
-    // ** Category Distribution **
-    const categoryChartData = {
-        labels: [...new Set(displayEntries.map(entry => entry.category.title))],
-        datasets: [{
-            data: [...new Set(displayEntries.map(entry => entry.category.title))]
-                .map(category => displayEntries.filter(e => e.category.title === category).length),
-            backgroundColor: [
-                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                '#9966FF', '#FF9F40', '#8AC249', '#EA3546'
-            ],
-        }],
-    };
+    /**
+     * Chart Data Preparation
+     */
 
-    // ** Mood Tracking Analysis **
+        // Category Distribution Pie Chart Data
+    const categoryChartData = {
+            labels: [...new Set(displayEntries.map(entry => entry.category.title))],
+            datasets: [{
+                data: [...new Set(displayEntries.map(entry => entry.category.title))]
+                    .map(category => displayEntries.filter(e => e.category.title === category).length),
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#8AC249', '#EA3546'
+                ],
+            }],
+        };
+
+    // Mood Tracking Analysis Bar Chart Data
     const moodChartData = {
         labels: [...new Set(displayEntries.filter(e => e.mood).map(e => e.mood))],
         datasets: [{
@@ -114,7 +133,7 @@ export default function Dashboard() {
         }],
     };
 
-    // ** Word Count Trends **
+    // Word Count Trends Line Chart Data
     const wordCountChartData = {
         labels: displayEntries.map(e => moment(e.date).format('MMM D')),
         datasets: [{
@@ -126,7 +145,7 @@ export default function Dashboard() {
         }],
     };
 
-    // ** Entry Length Averages by Category **
+    // Calculate average word counts by category
     const categoryAverages = [...new Set(displayEntries.map(e => e.category.title))]
         .map(category => {
             const categoryEntries = displayEntries.filter(e => e.category.title === category);
@@ -134,6 +153,7 @@ export default function Dashboard() {
             return { category, avgWords };
         });
 
+    // Entry Length Averages by Category Bar Chart Data
     const categoryAverageChartData = {
         labels: categoryAverages.map(d => d.category),
         datasets: [{
@@ -143,15 +163,19 @@ export default function Dashboard() {
         }],
     };
 
-    // ** Writing Frequency Heatmap **
+    // Prepare data for writing frequency heatmap
     const heatmapData = displayEntries.map(entry => ({
         date: moment(entry.date).format('YYYY-MM-DD'),
         count: 1,
     }));
 
-    // ** Word Cloud Data **
+    /**
+     * Word Cloud Effect
+     * Dynamically imports and renders word cloud based on journal content
+     */
     useEffect(() => {
         if (canvasRef.current && !wordCloudReady && displayEntries.length > 0) {
+            // Process words from journal entries
             const wordCloudWords = displayEntries
                 .flatMap(e => e.content.toLowerCase().split(/\s+/))
                 .filter(word => word.length > 3)
@@ -160,6 +184,7 @@ export default function Dashboard() {
                     return acc;
                 }, {});
 
+            // Dynamically import and render word cloud
             import("wordcloud").then(WordCloud => {
                 WordCloud.default(canvasRef.current, {
                     list: Object.entries(wordCloudWords),
@@ -178,7 +203,7 @@ export default function Dashboard() {
         <div className="container py-4">
             <h2 className="mb-4">Journal Analytics</h2>
 
-            {/* Date Range Filter */}
+            {/* Date Range Filter Section */}
             <div className="card mb-4">
                 <div className="card-body">
                     <h5 className="card-title">Date Range Filter</h5>
@@ -286,7 +311,6 @@ export default function Dashboard() {
                                     }}
                                 />
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -321,7 +345,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Fourth Row - Category Averages */}
+            {/* Fourth Row - Writing Frequency Heatmap */}
             <div className="row mb-4">
                 <div className="col-md-12">
                     <div className="card h-100">
@@ -334,8 +358,6 @@ export default function Dashboard() {
                                     values={heatmapData}
                                     classForValue={value => (!value ? "color-empty" : "color-filled")}
                                 />
-
-
                             </div>
                         </div>
                     </div>

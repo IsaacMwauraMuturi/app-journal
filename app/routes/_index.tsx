@@ -114,7 +114,6 @@ export default function Index() {
                 </div>
             </section>
 
-            {/* Footer */}
 
         </div>
     );

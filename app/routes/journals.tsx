@@ -23,8 +23,10 @@ import {
     CBadge
 } from "@coreui/react";
 
+// Initialize Prisma Client
 const prisma = new PrismaClient();
 
+// Loader function to require user session
 export async function loader({ request }) {
     await requireUserSession(request);
     return json({});
@@ -32,6 +34,8 @@ export async function loader({ request }) {
 
 export default function JournalList() {
     const fetcher = useFetcher();
+
+    // State for filters
     const [filters, setFilters] = useState({
         search: "",
         categoryId: "",
@@ -40,16 +44,22 @@ export default function JournalList() {
         endDate: "",
         tag: ""
     });
+
+    // State for journal entries
     const [journals, setJournals] = useState([]);
+
+    // State for filter options
     const [filterOptions, setFilterOptions] = useState({
         categories: [],
         moods: []
     });
 
+    // Load journals initially
     useEffect(() => {
         fetcher.load("/api/journals");
     }, []);
 
+    // Load journals when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         for (const [key, value] of Object.entries(filters)) {
@@ -58,6 +68,7 @@ export default function JournalList() {
         fetcher.load(`/api/journals?${params.toString()}`);
     }, [filters]);
 
+    // Update state when fetcher receives data
     useEffect(() => {
         if (fetcher.data) {
             setJournals(fetcher.data.journals);
@@ -68,6 +79,8 @@ export default function JournalList() {
     return (
         <CContainer fluid className="min-vh-100 d-flex flex-column">
             <h1 className="mb-4">Your Journals</h1>
+
+            {/* Filters Section */}
             <CCard className="mb-4">
                 <CCardHeader>Filters</CCardHeader>
                 <CCardBody>
@@ -127,6 +140,8 @@ export default function JournalList() {
                     </CRow>
                 </CCardBody>
             </CCard>
+
+            {/* Journals List Section */}
             <CCard>
                 <CCardBody>
                     {fetcher.state === "loading" ? (
