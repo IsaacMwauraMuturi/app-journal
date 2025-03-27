@@ -26,7 +26,7 @@ async function main() {
         create: {
             name: "Super Admin",
             email: "admin@me.com",
-            phone: "0715934415",
+            phone: "254715934415",
             password: hashedPassword,
             roleId: adminRole.id
         }

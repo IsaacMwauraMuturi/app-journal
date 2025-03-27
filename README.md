@@ -22,6 +22,7 @@ This full-stack application provides:
 - 😊 Mood tracking with automatic sentiment detection
 - 📅 Date-based organization
 - Optimistic updates for improved UX.
+![img_2.png](img_2.png)
 
 ### 3. Analytics Dashboard
 View all journal entries analytics with:
@@ -30,7 +31,7 @@ View all journal entries analytics with:
 - ☁️ Word clouds from journal content
 - 📉 Mood trend analysis
 - 📝 Category distribution visualization
-
+![img_1.png](img_1.png)
 ### 4. Categorization & Tagging
 - Flexible tagging system for easy organization.
 
@@ -102,6 +103,7 @@ View all journal entries analytics with:
    ```sh
    npx prisma db seed 
    ```
+   
 6. Start the application:
    ```sh
    npm run dev
@@ -116,9 +118,6 @@ View all journal entries analytics with:
    ```
    
 
-## API Documentation
-- Comprehensive API documentation available at `/api/docs`.
-- Includes authentication requirements and example requests/responses.
 
 ## System Design
 ### Architecture
