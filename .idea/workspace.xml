@@ -5,12 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2dc91e8d-da10-46c1-bc61-37d693b5f3e3" name="Changes" comment="Make the code maintainable and readability&#10;Update the README.md">
-      <change afterPath="$PROJECT_DIR$/img_3.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img_4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/READAPIDOC.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/READARCHITECTURE.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/READDATAMODEL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cypress/e2e/auth/login.spec.cy.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cypress/e2e/dashboard/analytics.spec.cy.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cypress/e2e/journal/create.spec.cy.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img_5.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img_6.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +79,7 @@
       <workItem from="1742514032782" duration="4939000" />
       <workItem from="1742772529345" duration="43431000" />
       <workItem from="1742842311512" duration="46357000" />
-      <workItem from="1743028631931" duration="7877000" />
+      <workItem from="1743028631931" duration="14956000" />
     </task>
     <task id="LOCAL-00001" summary="New Progress">
       <option name="closed" value="true" />
@@ -245,7 +249,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743035007261</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="Make the code maintainable and readability&#10;Update the README.md">
+      <option name="closed" value="true" />
+      <created>1743037457243</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1743037457243</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

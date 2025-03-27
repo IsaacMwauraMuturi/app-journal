@@ -146,8 +146,15 @@ View all journal entries analytics with:
 - Sentiment analysis for mood tracking.
 
 ## Testing
-- Unit, integration, and E2E tests implemented.
-- Jest & Cypress for test coverage.
+### Setting Up Cypress
+
+Initialize Cypress:
+ ```sh
+npx cypress open
+```
+This will create a cypress directory tests file in cypress/e2e/journal.spec.js:
+
+
 
 ## Contribution Guidelines
 1. Fork the repository.
